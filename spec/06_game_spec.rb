@@ -4,7 +4,7 @@ describe "Game" do
   let(:game){Game.new}
   it "Has a deck" do
     game.deck.make_one_deck
-    expect(game.deck.cards).to include({card: "S3", value: 1})
+    expect(game.deck.cards).to include({card: "S3", value: 3, running_count: 1})
   end
 
   it "Has players" do

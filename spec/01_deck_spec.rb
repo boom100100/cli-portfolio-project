@@ -10,45 +10,46 @@ describe "Deck" do
     end
 
     it "Has specific cards" do
-      expect(Deck::CARDS).to include({card: "S3", value: 1})
-      expect(Deck::CARDS).to include({card: "C4", value: 1})
-      expect(Deck::CARDS).to include({card: "HQ", value: -1})
-      expect(Deck::CARDS).to include({card: "DJ", value: -1})
-      expect(Deck::CARDS).to include({card: "C7", value: 0})
+      expect(Deck::CARDS).to include({card: "S3", value: 3, running_count: 1})
+      expect(Deck::CARDS).to include({card: "C4", value: 4, running_count: 1})
+      expect(Deck::CARDS).to include({card: "HQ", value: 10, running_count: -1})
+      expect(Deck::CARDS).to include({card: "DJ", value: 10, running_count: -1})
+      expect(Deck::CARDS).to include({card: "C7", value: 7, running_count: 0})
     end
   end
   describe "#make_one_deck" do
     it "Can make a stack of one deck" do
       deck.make_one_deck
-      expect(deck.cards).to include({card: "S3", value: 1})
-      expect(deck.cards).to include({card: "C4", value: 1})
-      expect(deck.cards).to include({card: "HQ", value: -1})
-      expect(deck.cards.select{|card| card == {card: "S3", value: 1}}.length).to eq(1)
-      expect(deck.cards.select{|card| card == {card: "C4", value: 1}}.length).to eq(1)
-      expect(deck.cards.select{|card| card == {card: "HQ", value: -1}}.length).to eq(1)
+      expect(deck.cards).to include({card: "S3", value: 3, running_count: 1})
+      expect(deck.cards).to include({card: "C4", value: 4, running_count: 1})
+      expect(deck.cards).to include({card: "HQ", value: 10, running_count: -1})
+      expect(deck.cards.select{|card| card == {card: "S3", value: 3, running_count: 1}}.length).to eq(1)
+      expect(deck.cards.select{|card| card == {card: "C4", value: 4, running_count: 1}}.length).to eq(1)
+      expect(deck.cards.select{|card| card == {card: "HQ", value: 10, running_count: -1}}.length).to eq(1)
     end
   end
 
   describe "#make_three_decks" do
     it "Can make a stack of three decks" do
       deck.make_three_decks
-      expect(deck.cards).to include({card: "S3", value: 1})
-      expect(deck.cards).to include({card: "C4", value: 1})
-      expect(deck.cards).to include({card: "HQ", value: -1})
-      expect(deck.cards.select{|card| card == {card: "S3", value: 1}}.length).to eq(3)
-      expect(deck.cards.select{|card| card == {card: "C4", value: 1}}.length).to eq(3)
-      expect(deck.cards.select{|card| card == {card: "HQ", value: -1}}.length).to eq(3)
+      expect(deck.cards).to include({card: "S3", value: 3, running_count: 1})
+      expect(deck.cards).to include({card: "C4", value: 4, running_count: 1})
+      expect(deck.cards).to include({card: "HQ", value: 10, running_count: -1})
+      expect(deck.cards.select{|card| card == {card: "S3", value: 3, running_count: 1}}.length).to eq(3)
+      expect(deck.cards.select{|card| card == {card: "C4", value: 4, running_count: 1}}.length).to eq(3)
+      expect(deck.cards.select{|card| card == {card: "HQ", value: 10, running_count: -1}}.length).to eq(3)
+
     end
   end
   describe "#make_six_decks" do
     it "Can make a stack of six decks" do
       deck.make_six_decks
-      expect(deck.cards).to include({card: "S3", value: 1})
-      expect(deck.cards).to include({card: "C4", value: 1})
-      expect(deck.cards).to include({card: "HQ", value: -1})
-      expect(deck.cards.select{|card| card == {card: "S3", value: 1}}.length).to eq(6)
-      expect(deck.cards.select{|card| card == {card: "C4", value: 1}}.length).to eq(6)
-      expect(deck.cards.select{|card| card == {card: "HQ", value: -1}}.length).to eq(6)
+      expect(deck.cards).to include({card: "S3", value: 3, running_count: 1})
+      expect(deck.cards).to include({card: "C4", value: 4, running_count: 1})
+      expect(deck.cards).to include({card: "HQ", value: 10, running_count: -1})
+      expect(deck.cards.select{|card| card == {card: "S3", value: 3, running_count: 1}}.length).to eq(6)
+      expect(deck.cards.select{|card| card == {card: "C4", value: 4, running_count: 1}}.length).to eq(6)
+      expect(deck.cards.select{|card| card == {card: "HQ", value: 10, running_count: -1}}.length).to eq(6)
     end
   end
   describe "#shuffle" do
