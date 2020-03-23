@@ -1,6 +1,6 @@
 class Game
   attr_accessor :deck, :player_1, :player_2, :player_3, :house
-  attr_reader :players
+  attr_reader :betters, :players
 
   def initialize(deck = nil, house = nil, p1 = nil, p2 = nil, p3 = nil)
     @deck = Deck.new unless @deck = deck
@@ -10,10 +10,12 @@ class Game
     @player_2 = Players::Computer.new
     @player_3 = Players::Computer.new
 
+    @betters = []
     @players = []
-    @players << @player_1
-    @players << @player_2
-    @players << @player_3
+    @betters << @player_1
+    @betters << @player_2
+    @betters << @player_3
+    @players = [*@betters, @host]
   end
 
   def self.tutorial
@@ -51,14 +53,15 @@ class Game
   end
 
   def start
-    puts "Place your bets!"
     puts ''
-    puts ''
-    choose_table
-    place_bet
-    deal
-    insurance
-    play
+    puts 'You chose to start a new game.'
+    choose_table #TODO needs test
+    #while !over?
+      place_bet #TODO needs test
+      deal
+      insurance
+      play
+    #end
 
     #place bets
     #deal
@@ -87,72 +90,159 @@ class Game
     input
   end
 
-  def bet(player)
+  def bet(player, limit, type)
     if player.is_a? Players::Human
-      puts "Please enter a value for your bet. You have #{player.chips} chips."
+      puts "Please enter a value for your bet. You can bet between 5 and #{limit} chip(s)."
       wager = player.move
-      if wager.to_i && wager.to_i <= player.chips && wager.to_i > 0 #bets just enough
-        player.bet = wager
-      elsif wager.to_i && wager.to_i > player.chips #bets too much
-        puts "You don't have enough chips for that wager."
-        bet(player)
-      elsif wager.to_i #bets too little
-        puts 'You have decided to sit this round out.'
-      else
+      if wager.to_i && wager.to_i <= limit && wager.to_i >= 5 #bets just enough
+        player.send("#{type}=",wager.to_i)
+        #player.bet = wager.to_i
+        player.chips = player.chips - player.bet
+        puts "Your bet is #{player.bet} chips."
+      elsif wager.to_i && wager.to_i > limit #bets too much
+        puts "That wager exceeds what you can bet."
+        bet(player, limit, type)
+      elsif wager.to_i != "0" && wager.to_i == 0
         puts 'Invalid input.'
+        bet(player, limit, type)
+      elsif wager.to_i && wager.to_i < 5 #bets too little
+        puts "You can not bet fewer than 5 chips."
+        bet(player, limit, type)
+
       end
     else
-      player.bet = 100
+      player.bet = Random.new.rand(player.chips)
       puts "The computer bets #{player.bet}."
     end
   end
 
   def place_bet
-    @players.each do |player|
-      bet(player)
+    @betters.each do |player|
+      bet(player, player.chips, 'bet')
     end
   end
 
   def deal
-  end
-  def insurance
-  end
-  def play
+    @betters.each do |player|
+      2.times { hit(player) }
+      puts "This #{player.class} Player has the following cards:"
+      player.cards.each do |card|
+        reveal_card(card)
+      end
+    end
+    2.times { hit(@house) }
+    puts "The house's hand has one face-up card:"
+    reveal_card(@house.cards[0])
   end
 
-  def do_turn
+  def insurance
+    if @house.cards[0][:value] == 11
+      @betters.each do |player|
+        if player.is_a? Players::Human
+          puts 'Would you like insurance? (y/N)'
+          input = gets.chomp
+          if input == "y" || input == "Y"
+            bet(player, (player.bet/2), 'side_bet')
+          else
+            puts 'Your input is invalid.'
+            insurance
+          end
+        else
+          bet(player, (player.bet/2), 'side_bet')
+        end
+      end
+      distribute_winnings if over?
+    end
+  end
+
+  def play
+    @players.each do |player|
+      do_turn(player)
+    end
+  end
+
+  def do_turn(player)
+    playing = true
+    while playing
+      puts "#{player}, what would you like to do?"
+      puts "Stand (1), hit (2), double (3), split (4), or surrender (5)?"
+      input = player.move
+      case input
+      when '1'
+        playing = false
+      when '2'
+        hit(player)
+        playing = false if player.hand_value >= 21
+      when '3'
+        double
+      when '4'
+        split
+      when '5'
+        surrender
+        playing = false
+      else
+        puts 'That is an invalid move.'
+        do_turn(player)
+      end
+    end
+
   end #play 1. all players place a bet. 2. one face up card clockwise, including one to dealer. 3. one more face up to each, except to dealer. Dealer's second card is face down. 4. If dealer has ace, insurance bet offer. 5. If non-dealer has natural, player receives 1.5 of bet. If only dealer has natural, all other players lose bet. If there is a natural tie between dealer and player,
 
-
-
   def hit(player) #gives card to player, removes card from @cards
+    player.cards << @deck.cards.shift
   end
 
-  def reveal
-    @house.cards
-     #write to show house's cards
+  def double
+  end
+  def split
+  end
+  def surrender
+  end
+
+  def reveal_card(card)
+    puts Deck.interpret(card)
+  end
+
+
+
+  def won?
+    #sc1: p1 has blackjack, house does not
+    #sc2: 21 >= p1 hand > house
+    (@player_1.hand_value > @house.hand_value && @player_1.hand_value <= 21) || @house.hand_value > 21 && @player_1.hand_value <= 21
+  end
+
+  def quit? #when you walk away or when chips = 0 or when you get kicked out because house is angry100
+  end
+
+  def over?
+    #blackjack = over
+    @players.each do |player|
+      return blackjack?(player) if blackjack?(player)
+    end
+
+    if f
+    end
+  end
+
+  def blackjack?(player)
+    true if player.hand_value == 21 && player.cards.length == 2
+  end
+
+  def bust?(player) #can't draw more cards
+    player.hand_value > 21
   end
 
   def draw?
     @player_1.hand_value == @house.hand_value
   end
 
-  def won?
-    @player_1.hand_value > @house.hand_value
-=begin
-  How do you beat the dealer?
-  #By drawing a hand value that is higher than the dealer’s hand value
-  #By the dealer drawing a hand value that goes over 21.
-  #By drawing a hand value of 21 on your first two cards, when the dealer does not.
-
-  How do you lose to the dealer?
-  #Your hand value exceeds 21.
-  #The dealers hand has a greater value than yours at the end of the round
-=end
-  end
-
-  def over? #when you walk away or when chips = 0 or when you get kicked out because house is angry100
-  end
-  def winner
+  def distribute_winnings
+    @betters.each do |player|
+      if blackjack?(@house) && blackjack?(player) #draw + insurance winnings
+        player.chips = player.chips + player.side_bet + player.bet
+      elsif blackjack?(@house) #loss with side_bet
+        player.chips = player.chips + player.side_bet
+      end
+    end
   end
 end

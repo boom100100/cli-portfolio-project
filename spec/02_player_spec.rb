@@ -28,6 +28,15 @@ describe "Player" do
         {card: "HQ", value: 10, running_count: -1}
       ]
       expect(player.hand_value).to eq(24)
+
+      expect(player.hand_value).to eq(17)
+
+      player.cards = [
+        {card: "CA", value: 1, running_count: -1},
+        {card: "DA", value: 1, running_count: -1},
+        {card: "HQ", value: 10, running_count: -1}
+      ]
+      expect(player.hand_value).to eq(12)
     end
   end
 end

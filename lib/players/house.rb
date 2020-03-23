@@ -3,6 +3,7 @@ module Players
     attr_accessor :anger
 
     def initialize
+      super
       @anger = 0 #if anger = 100, player_1 gets kicked out. This resets whole game. Condition will change as player_1 wins - other players don't matter
     end
 
