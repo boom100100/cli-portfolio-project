@@ -3,7 +3,7 @@ require "spec_helper"
 describe "Game" do
   let(:game){Game.new}
   it "Has a deck" do
-    game.deck.make_one_deck
+    game.deck.make_decks(1)
     expect(game.deck.cards).to include({card: "S3", value: 3, running_count: 1})
   end
 

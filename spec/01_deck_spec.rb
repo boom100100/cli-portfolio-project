@@ -17,44 +17,30 @@ describe "Deck" do
       expect(Deck::CARDS).to include({card: "C7", value: 7, running_count: 0})
     end
   end
-  describe "#make_one_deck" do
-    it "Can make a stack of one deck" do
-      deck.make_one_deck
+  describe "#make_decks" do
+    it "Can make a stack of two decks" do
+      deck.make_decks(2)
       expect(deck.cards).to include({card: "S3", value: 3, running_count: 1})
       expect(deck.cards).to include({card: "C4", value: 4, running_count: 1})
       expect(deck.cards).to include({card: "HQ", value: 10, running_count: -1})
-      expect(deck.cards.select{|card| card == {card: "S3", value: 3, running_count: 1}}.length).to eq(1)
-      expect(deck.cards.select{|card| card == {card: "C4", value: 4, running_count: 1}}.length).to eq(1)
-      expect(deck.cards.select{|card| card == {card: "HQ", value: 10, running_count: -1}}.length).to eq(1)
+      expect(deck.cards.select{|card| card == {card: "S3", value: 3, running_count: 1}}.length).to eq(2)
+      expect(deck.cards.select{|card| card == {card: "C4", value: 4, running_count: 1}}.length).to eq(2)
+      expect(deck.cards.select{|card| card == {card: "HQ", value: 10, running_count: -1}}.length).to eq(2)
     end
-  end
 
-  describe "#make_three_decks" do
-    it "Can make a stack of three decks" do
-      deck.make_three_decks
+    it "Can make a stack of eight decks" do
+      deck.make_decks(8)
       expect(deck.cards).to include({card: "S3", value: 3, running_count: 1})
       expect(deck.cards).to include({card: "C4", value: 4, running_count: 1})
       expect(deck.cards).to include({card: "HQ", value: 10, running_count: -1})
-      expect(deck.cards.select{|card| card == {card: "S3", value: 3, running_count: 1}}.length).to eq(3)
-      expect(deck.cards.select{|card| card == {card: "C4", value: 4, running_count: 1}}.length).to eq(3)
-      expect(deck.cards.select{|card| card == {card: "HQ", value: 10, running_count: -1}}.length).to eq(3)
-
-    end
-  end
-  describe "#make_six_decks" do
-    it "Can make a stack of six decks" do
-      deck.make_six_decks
-      expect(deck.cards).to include({card: "S3", value: 3, running_count: 1})
-      expect(deck.cards).to include({card: "C4", value: 4, running_count: 1})
-      expect(deck.cards).to include({card: "HQ", value: 10, running_count: -1})
-      expect(deck.cards.select{|card| card == {card: "S3", value: 3, running_count: 1}}.length).to eq(6)
-      expect(deck.cards.select{|card| card == {card: "C4", value: 4, running_count: 1}}.length).to eq(6)
-      expect(deck.cards.select{|card| card == {card: "HQ", value: 10, running_count: -1}}.length).to eq(6)
+      expect(deck.cards.select{|card| card == {card: "S3", value: 3, running_count: 1}}.length).to eq(8)
+      expect(deck.cards.select{|card| card == {card: "C4", value: 4, running_count: 1}}.length).to eq(8)
+      expect(deck.cards.select{|card| card == {card: "HQ", value: 10, running_count: -1}}.length).to eq(8)
     end
   end
   describe "#shuffle" do
     it "Can shuffle cards" do
-      deck.make_one_deck
+      deck.make_decks(1)
       save_cards = deck.cards
       deck.shuffle
       expect(deck.cards.length).to eq(52)
@@ -65,7 +51,7 @@ describe "Deck" do
 
   describe "#cut" do
     it "Can cut cards" do
-      deck.make_one_deck
+      deck.make_decks(1)
       save_cards = deck.cards
       deck.cut
       expect(deck.cards.length).to eq(52)

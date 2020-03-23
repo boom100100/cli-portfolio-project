@@ -11,19 +11,8 @@ class Deck
     @cards = []
   end
 
-  def make_one_deck
-    #puts "You have chosen the easy level."
-    @cards = CARDS.to_a
-  end
-
-  def make_three_decks
-    #puts "You have chosen the intermediate level."
-    @cards = CARDS.to_a + CARDS.to_a + CARDS.to_a
-  end
-
-  def make_six_decks
-    #puts "You have chosen the hard level."
-    @cards = CARDS.to_a + CARDS.to_a + CARDS.to_a + CARDS.to_a + CARDS.to_a + CARDS.to_a
+  def make_decks(number)
+    @cards = (CARDS.to_a)*number
   end
 
   def shuffle

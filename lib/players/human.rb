@@ -10,7 +10,7 @@ module Players
 
 
     def move #bet <= chips ? bet = input : move
-      input = gets
+      input = gets.chomp
       input
     end
   end
