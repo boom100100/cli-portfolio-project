@@ -6,6 +6,6 @@ class Player
   end
 
   def hand_value
-    value = @cards.select{|card| card.value}.reduce(0, :+)
+    @cards.reduce {|acc, h| acc.merge(h) {|_,v1,v2| v1 + v2 }}[:value]
   end
 end

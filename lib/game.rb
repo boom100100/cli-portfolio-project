@@ -19,8 +19,8 @@ class Game
     puts 'If no player immediately gets a blackjack, you can choose to draw another card into your hand or to decline.'
     puts 'Stop when you have the highest possible value without not going over, or "busting."'
     puts ''
-    puts 'Cards 2-9 are worth their numerical value, regardless of suit.'
-    puts 'Cards values 10, J, Q and K are worth 10.'
+    puts 'Cards 2-10 are worth their numerical value, regardless of suit.'
+    puts 'Cards J, Q and K are worth 10.'
     puts 'An A (or ace) is worth 11 or 1 point, depending on your need.'
     puts 'For example, having an A and a J means you have a blackjack hand. Your score is 21, and if you are the only one with two cards like these, you automatically win. If the dealer also has this hand, it is a tie between you two.'
     puts 'Alternatively, an A, a 10, a 7, and a 3 also add to 21.'
@@ -77,7 +77,12 @@ class Game
      #write to show house's cards
   end
 
+  def draw?
+    @player_1.hand_value == @house.hand_value
+  end
+
   def won?
+    @player_1.hand_value > @house.hand_value
 =begin
   How do you beat the dealer?
   #By drawing a hand value that is higher than the dealer’s hand value
@@ -89,8 +94,7 @@ class Game
   #The dealers hand has a greater value than yours at the end of the round
 =end
   end
-  def hand_value
-  end
+
   def over? #when you walk away or when chips = 0 or when you get kicked out because house is angry100
   end
   def winner

@@ -7,9 +7,13 @@ module Players
     end
 
     def move
-      input = gets
+      input = strategy
       input
     end
-    
+
+    def strategy
+      hand_value < 18 ? "y" : "n"
+    end
+
   end
 end
