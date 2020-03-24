@@ -9,13 +9,17 @@ class Player
 
   def hand_value
     value = 0
+    secondary_value = []
     @cards.each do |card|
-      puts card[:value]
-      secondary_value = 1 if card[:value] = 11
+      secondary_value << 1 if card[:value] == 11
       value = value + card[:value]
-      value = value - 10 if (secondary_value && value > 21)
+      
+      while (secondary_value.length > 0 && value > 21)
+        value = value - 10
+        secondary_value.shift
+      end
     end
 
-      value
+    value
   end
 end

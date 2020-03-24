@@ -15,11 +15,12 @@ class Game
     @betters << @player_1
     @betters << @player_2
     @betters << @player_3
-    @players = [*@betters, @host]
+    @players = [*@betters, @house]
   end
 
   def self.tutorial
     puts 'The object of the game is to beat the dealer.'
+    puts ''
     puts 'Gameplay works as follows.'
     puts 'Place an initial bet.'
     #puts 'Choose whether to increase that bet.'
@@ -55,20 +56,26 @@ class Game
   def start
     puts ''
     puts 'You chose to start a new game.'
-    choose_table #TODO needs test
-    #while !over?
-      place_bet #TODO needs test
-      deal
-      insurance
-      play
-    #end
+    puts ''
+    change_table
 
-    #place bets
-    #deal
-    #reveal natural winnings
 
 
     #if game.deck.cards = 0 puts "I'm opening a new deck."
+  end
+
+  def change_table
+    choose_table #TODO needs test
+    do_round
+  end
+
+  def do_round
+    place_bet #TODO needs test
+    deal
+    insurance
+    play
+    contemplate
+
   end
 
   def choose_table
@@ -85,31 +92,44 @@ class Game
     if input.to_i > 8 || input.to_i <= 0
       choose_table
     end
+    puts ''
     puts "You have chosen Table #{input}"
+    puts ''
     @deck.make_decks(input.to_i)
     input
   end
 
   def bet(player, limit, type)
-    if player.is_a? Players::Human
-      puts "Please enter a value for your bet. You can bet between 5 and #{limit} chip(s)."
-      wager = player.move
-      if wager.to_i && wager.to_i <= limit && wager.to_i >= 5 #bets just enough
-        player.send("#{type}=",wager.to_i)
-        #player.bet = wager.to_i
-        player.chips = player.chips - player.bet
-        puts "Your bet is #{player.bet} chips."
-      elsif wager.to_i && wager.to_i > limit #bets too much
-        puts "That wager exceeds what you can bet."
-        bet(player, limit, type)
-      elsif wager.to_i != "0" && wager.to_i == 0
-        puts 'Invalid input.'
-        bet(player, limit, type)
-      elsif wager.to_i && wager.to_i < 5 #bets too little
-        puts "You can not bet fewer than 5 chips."
-        bet(player, limit, type)
+    minimum = 5
+    if type == 'side_bet'
+      minimum = 0
+    end
 
-      end
+    if player.is_a? Players::Human
+      puts ''
+      puts "Please enter a value for your bet."
+      puts "You can bet between #{minimum} and #{limit} chip(s)."
+
+      wager = player.move
+
+        if wager.to_i && wager.to_i <= limit && wager.to_i >= minimum #bets just enough
+          player.send("#{type}=",wager.to_i)
+          #player.bet = wager.to_i
+          player.chips = player.chips - player.bet
+          puts ''
+          puts "Your bet is #{player.bet} chips."
+        elsif wager.to_i && wager.to_i > limit #bets too much
+          puts "That wager exceeds what you can bet."
+          bet(player, limit, type)
+        elsif wager.to_i != "0" && wager.to_i == 0
+          puts 'Invalid input.'
+          bet(player, limit, type)
+        elsif wager.to_i && wager.to_i < minimum #bets too little
+          puts "You can not bet fewer than #{minimum} chip(s)."
+          bet(player, limit, type)
+
+        end
+
     else
       player.bet = Random.new.rand(player.chips)
       puts "The computer bets #{player.bet}."
@@ -124,6 +144,7 @@ class Game
 
   def deal
     @betters.each do |player|
+      puts ''
       2.times { hit(player) }
       puts "This #{player.class} Player has the following cards:"
       player.cards.each do |card|
@@ -131,6 +152,7 @@ class Game
       end
     end
     2.times { hit(@house) }
+    puts ''
     puts "The house's hand has one face-up card:"
     reveal_card(@house.cards[0])
   end
@@ -143,6 +165,7 @@ class Game
           input = gets.chomp
           if input == "y" || input == "Y"
             bet(player, (player.bet/2), 'side_bet')
+          elsif input == "n" || input == "N"
           else
             puts 'Your input is invalid.'
             insurance
@@ -151,7 +174,10 @@ class Game
           bet(player, (player.bet/2), 'side_bet')
         end
       end
-      distribute_winnings if over?
+      if over?
+        distribute_winnings
+        contemplate
+      end
     end
   end
 
@@ -159,44 +185,80 @@ class Game
     @players.each do |player|
       do_turn(player)
     end
+    distribute_winnings
   end
 
   def do_turn(player)
     playing = true
     while playing
+      puts ''
       puts "#{player}, what would you like to do?"
       puts "Stand (1), hit (2), double (3), split (4), or surrender (5)?"
       input = player.move
       case input
       when '1'
+        puts "#{player} has chosen to stand."
         playing = false
       when '2'
+        puts "#{player} has chosen to hit."
         hit(player)
+        puts ''
+        puts 'Your cards are:'
+        player.cards.each do |card|
+          puts "#{Deck.interpret(card)}"
+        end
         playing = false if player.hand_value >= 21
       when '3'
-        double
+        puts "#{player} has chosen to double."
+        new_bet = player.bet * 2
+        if new_bet <= player.chips
+          double(player, new_bet)
+          playing = false
+        else
+          puts "#{player} doesn\'t have enough chips to double."
+          do_turn(player)
+        end
       when '4'
-        split
+        if player.cards.length == 2
+          puts "#{player} has chosen to split."
+          split
+        else
+          puts 'It is too late to split.'
+          do_turn(player)
+        end
       when '5'
-        surrender
-        playing = false
+        if player.cards.length == 2
+          puts "#{player} has chosen to surrender."
+          surrender #late surrender
+          playing = false
+        else
+          puts 'It is too late to surrender.'
+        end
       else
         puts 'That is an invalid move.'
         do_turn(player)
       end
     end
-
-  end #play 1. all players place a bet. 2. one face up card clockwise, including one to dealer. 3. one more face up to each, except to dealer. Dealer's second card is face down. 4. If dealer has ace, insurance bet offer. 5. If non-dealer has natural, player receives 1.5 of bet. If only dealer has natural, all other players lose bet. If there is a natural tie between dealer and player,
+  end
 
   def hit(player) #gives card to player, removes card from @cards
     player.cards << @deck.cards.shift
   end
 
-  def double
+  def double(player, new_bet)
+    player.bet = new_bet
+    hit(player)
   end
-  def split
+
+  def split # TODO:
   end
-  def surrender
+
+  def surrender(player)
+    player.chips = player.chips + (player.bet/2)
+    player.cards = []
+    player.bet = 0
+    player.side_bet = 0 #remove side bet here? ##################################
+    player.is_playing = false
   end
 
   def reveal_card(card)
@@ -205,10 +267,11 @@ class Game
 
 
 
-  def won?
-    #sc1: p1 has blackjack, house does not
-    #sc2: 21 >= p1 hand > house
-    (@player_1.hand_value > @house.hand_value && @player_1.hand_value <= 21) || @house.hand_value > 21 && @player_1.hand_value <= 21
+  def won?(player)
+    #sc1: p has blackjack, house does not
+    #sc2: p has higher than house, not busting
+    #sc3: p has lower than house, house busted
+    (blackjack?(player) && !blackjack?(@house)) || (player.hand_value > @house.hand_value && !bust?(player)) || bust?(@house) && !bust?(player)
   end
 
   def quit? #when you walk away or when chips = 0 or when you get kicked out because house is angry100
@@ -219,30 +282,94 @@ class Game
     @players.each do |player|
       return blackjack?(player) if blackjack?(player)
     end
-
-    if f
-    end
   end
 
   def blackjack?(player)
-    true if player.hand_value == 21 && player.cards.length == 2
+    (player.hand_value == 21 && player.cards.length == 2) ? true : false
   end
 
   def bust?(player) #can't draw more cards
     player.hand_value > 21
   end
 
-  def draw?
-    @player_1.hand_value == @house.hand_value
+  def lost?(player)
+    (bust? || (blackjack?(@house) && !blackjack?(player)) || ((@house.hand_value > player.hand_value) && !bust?(@house))) ? true : false
+  end
+
+  def surrender?(player)
+    player.is_playing == false
+  end
+
+  def draw?(player)
+    !bust?(player) && player.hand_value == @house.hand_value
   end
 
   def distribute_winnings
     @betters.each do |player|
-      if blackjack?(@house) && blackjack?(player) #draw + insurance winnings
-        player.chips = player.chips + player.side_bet + player.bet
-      elsif blackjack?(@house) #loss with side_bet
-        player.chips = player.chips + player.side_bet
+      winnings = 0
+      losings = 0
+      if blackjack?(@house) && blackjack?(player) #double blackjack #####draw + insurance winnings - no change to bets
+        winnings = (player.side_bet*2) + player.bet#don't double bet - it's a draw
+      elsif blackjack?(@house) #house blackjack ########bet value is zero, side_bet stays the same
+        winnings = (player.side_bet*2)
+        losings = player.bet
+      elsif lost?(player)
+        losings = player.side_bet + player.bet
+      elsif draw?(player)
+        winnings = player.bet #return bet
+        losings = player.side_bet
+
+      elsif bust?(player) #player lose
+        losings = player.side_bet + player.bet
+
+      elsif won?(player) #player win
+        winnings = (player.bet * 2)
+        losings = player.side_bet
+
+      elsif surrender?(player)
+        winnings = (player.bet/2)
+        losings = (player.bet/2)
+
       end
+
+      player.chips = player.chips + winnings
+      puts "#{player} won #{winnings} chips."
+      puts "#{player} lost #{losings} chips."
+      puts "#{player} has #{player.chips} chips."
+
+      reset_bets(player)
+
+    end
+  end
+
+  def reset_bets(player)
+    player.bet = 0
+    player.side_bet = 0
+  end
+
+  def contemplate
+    puts ''
+    puts 'Would you like to continue (c), change tables (t), or finish this game (f)?'
+    cont(@player_1.move)
+  end
+
+  def cont(input)
+    if input == 'c' || input == 'C'
+      do_round
+    elsif input == 't' || input == 'T'
+      change_table
+    elsif input == 'f' || input == 'F'
+      puts 'Are you sure you want to leave? All your winnings and losses will reset. Enter "y" for yes and "n" for no.'
+      input = gets.chomp
+      if input == 'n' || input == 'N'
+        contemplate
+      elsif input == 'y' || input == 'Y'
+      else
+        puts 'Your input is invalid. Please try again.'
+        cont('f')
+      end
+    else
+      puts 'Your input is invalid. Please try again.'
     end
   end
 end

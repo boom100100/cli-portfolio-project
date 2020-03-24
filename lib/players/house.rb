@@ -13,7 +13,7 @@ module Players
     end
 
     def strategy
-      hand_value < 18 ? "y" : "n"
+      hand_value >= 17 ? "1" : "2" #1 is stand; 2 is hit
     end
 
   end
