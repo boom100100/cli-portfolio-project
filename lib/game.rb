@@ -1,5 +1,5 @@
 class Game
-  attr_accessor :deck, :player_1, :player_2, :player_3, :house
+  attr_accessor :deck, :player_1, :player_2, :player_3, :house, :table
   attr_reader :betters, :players
 
   def initialize(deck = nil, house = nil, p1 = nil, p2 = nil, p3 = nil)
@@ -65,12 +65,12 @@ class Game
   end
 
   def change_table
-    choose_table #TODO needs test
+    choose_table
     do_round
   end
 
   def do_round
-    place_bet #TODO needs test
+    place_bet
     deal
     insurance
     if over?
@@ -79,6 +79,7 @@ class Game
     end
     play
     contemplate
+    check_cards
 
   end
 
@@ -96,17 +97,19 @@ class Game
     if input.to_i > 8 || input.to_i <= 0
       choose_table
     end
+
     puts ''
     puts "You have chosen Table #{input}"
     puts ''
+    @table = input.to_i
     @deck.make_decks(input.to_i)
-    input
+    input #doesn't need this return value
   end
 
-  def bet(player, limit, type)
+  def bet(player, limit, type) #todo write test
     minimum = 5
     if type == 'side_bet'
-      minimum = 0
+      minimum = 0 #if limit < 5
     end
 
     if player.is_a? Players::Human
@@ -135,13 +138,9 @@ class Game
         end
 
     else
-      if player.chips >= limit
-        player.send("#{type}=",Random.new.rand(limit))
-        player.chips = player.chips - player.send("#{type}")
-      else
-        player.send("#{type}=",Random.new.rand(player.chips))
-        player.chips = player.chips - player.bet
-      end
+      player.send("#{type}=",Random.new.rand(limit))
+      player.chips = player.chips - player.send("#{type}")
+
       puts "The computer bets #{player.send("#{type}")}."
     end
   end
@@ -153,18 +152,23 @@ class Game
   end
 
   def deal
-    @betters.each do |player|
+    @players.each do |player|
       puts ''
-      2.times { hit(player) }
-      puts "This #{player.class} Player has the following cards:"
-      player.cards.each do |card|
-        reveal_card(card)
+      while player.cards.length < 2
+        hit(player)
+      end
+      if player != @house
+        puts "This #{player.class} Player has the following cards:"
+        player.cards.each do |card|
+          reveal_card(card)
+        end
+        puts ''
+      else
+        puts "The house's hand has one face-up card:"
+        reveal_card(player.cards[0])
+        puts ''
       end
     end
-    2.times { hit(@house) }
-    puts ''
-    puts "The house's hand has one face-up card:"
-    reveal_card(@house.cards[0])
   end
 
   def insurance
@@ -185,6 +189,8 @@ class Game
         end
       end
     end
+    puts 'The house\'s other card is:'
+    reveal_card(@house.cards[1])
 
   end
 
@@ -219,6 +225,7 @@ class Game
         puts "#{player} has chosen to double."
         new_bet = player.bet * 2
         if new_bet <= player.chips
+          player.chips = player.chips - player.bet
           double(player, new_bet)
           playing = false
         else
@@ -236,7 +243,7 @@ class Game
       when '5'
         if player.cards.length == 2
           puts "#{player} has chosen to surrender."
-          surrender #late surrender
+          surrender(player) #late surrender
           playing = false
         else
           puts 'It is too late to surrender.'
@@ -252,7 +259,7 @@ class Game
     player.cards << @deck.cards.shift
   end
 
-  def double(player, new_bet)
+  def double(player, new_bet) #test result is wrong
     player.bet = new_bet
     hit(player)
   end
@@ -261,10 +268,6 @@ class Game
   end
 
   def surrender(player)
-    player.chips = player.chips + (player.bet/2)
-    player.cards = []
-    player.bet = 0
-    player.side_bet = 0 #remove side bet here? ##################################
     player.is_playing = false
   end
 
@@ -276,9 +279,19 @@ class Game
 
   def won?(player)
     #sc1: p has blackjack, house does not
-    #sc2: p has higher than house, not busting
-    #sc3: p has lower than house, house busted
-    (blackjack?(player) && !blackjack?(@house)) || (player.hand_value > @house.hand_value && !bust?(player)) || bust?(@house) && !bust?(player)
+    #sc2: p has higher than house, not busting, no one else has blackjack
+    #sc3: p has lower than house, house busted, no one else has blackjack
+    blackjack_getter = @players.select {|e| e if blackjack?(e)}
+
+    if blackjack?(player) && !blackjack?(@house)
+      return true
+    elsif (player.hand_value > @house.hand_value && !bust?(player) && blackjack_getter.length == 0)
+      return true
+    elsif bust?(@house) && !bust?(player) && blackjack_getter.length == 0
+      return true
+    else
+      false
+    end
   end
 
   def quit? #when you walk away or when chips = 0 or when you get kicked out because house is angry100
@@ -305,7 +318,7 @@ class Game
 
   def lost?(player)
     blackjack_getter = @players.select {|player| player if blackjack?(player)}
-    (bust?(player) || (blackjack_getter.length > 0 && blackjack_getter.include?(player)) || ((@house.hand_value > player.hand_value) && !bust?(@house))) ? true : false
+    (bust?(player) || (blackjack_getter.length > 0 && !blackjack_getter.include?(player)) || ((@house.hand_value > player.hand_value) && !bust?(@house))) ? true : false
   end
 
   def surrender?(player)
@@ -317,8 +330,6 @@ class Game
   end
 
   def distribute_winnings
-
-
     @betters.each do |player|
       winnings = 0
       losings = 0
@@ -360,14 +371,16 @@ class Game
       puts "#{player} lost #{losings} chips."
       puts "#{player} has #{player.chips} chips."
 
-      reset_bets(player)
+      reset(player)
 
     end
+    @house.cards = []
   end
 
-  def reset_bets(player)
+  def reset(player)
     player.bet = 0
     player.side_bet = 0
+    player.cards = []
   end
 
   def contemplate
@@ -393,6 +406,15 @@ class Game
       end
     else
       puts 'Your input is invalid. Please try again.'
+      contemplate
+    end
+  end
+
+  def check_cards
+    if game.deck.cards.length < (20*@table)
+      puts 'It\'s time to reshuffle the cards.'
+      @deck.cards = []
+      @deck.make_decks(@table)
     end
   end
 end
