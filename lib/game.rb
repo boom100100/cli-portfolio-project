@@ -73,6 +73,10 @@ class Game
     place_bet #TODO needs test
     deal
     insurance
+    if over?
+      distribute_winnings
+      contemplate
+    end
     play
     contemplate
 
@@ -115,9 +119,9 @@ class Game
         if wager.to_i && wager.to_i <= limit && wager.to_i >= minimum #bets just enough
           player.send("#{type}=",wager.to_i)
           #player.bet = wager.to_i
-          player.chips = player.chips - player.bet
+          player.chips = player.chips - player.send("#{type}")
           puts ''
-          puts "Your bet is #{player.bet} chips."
+          puts "Your bet is #{player.send("#{type}")} chips."
         elsif wager.to_i && wager.to_i > limit #bets too much
           puts "That wager exceeds what you can bet."
           bet(player, limit, type)
@@ -131,8 +135,14 @@ class Game
         end
 
     else
-      player.bet = Random.new.rand(player.chips)
-      puts "The computer bets #{player.bet}."
+      if player.chips >= limit
+        player.send("#{type}=",Random.new.rand(limit))
+        player.chips = player.chips - player.send("#{type}")
+      else
+        player.send("#{type}=",Random.new.rand(player.chips))
+        player.chips = player.chips - player.bet
+      end
+      puts "The computer bets #{player.send("#{type}")}."
     end
   end
 
@@ -174,11 +184,8 @@ class Game
           bet(player, (player.bet/2), 'side_bet')
         end
       end
-      if over?
-        distribute_winnings
-        contemplate
-      end
     end
+
   end
 
   def play
@@ -280,8 +287,12 @@ class Game
   def over?
     #blackjack = over
     @players.each do |player|
-      return blackjack?(player) if blackjack?(player)
+      if blackjack?(player)
+        puts "#{player} has blackjack!"
+        return blackjack?(player)
+      end
     end
+    false
   end
 
   def blackjack?(player)
@@ -293,7 +304,8 @@ class Game
   end
 
   def lost?(player)
-    (bust? || (blackjack?(@house) && !blackjack?(player)) || ((@house.hand_value > player.hand_value) && !bust?(@house))) ? true : false
+    blackjack_getter = @players.select {|player| player if blackjack?(player)}
+    (bust?(player) || (blackjack_getter.length > 0 && blackjack_getter.include?(player)) || ((@house.hand_value > player.hand_value) && !bust?(@house))) ? true : false
   end
 
   def surrender?(player)
@@ -305,34 +317,45 @@ class Game
   end
 
   def distribute_winnings
+
+
     @betters.each do |player|
       winnings = 0
       losings = 0
+      test_output = ''
       if blackjack?(@house) && blackjack?(player) #double blackjack #####draw + insurance winnings - no change to bets
+        test_output = 'double blackjack'
         winnings = (player.side_bet*2) + player.bet#don't double bet - it's a draw
       elsif blackjack?(@house) #house blackjack ########bet value is zero, side_bet stays the same
+        test_output = 'house blackjack'
         winnings = (player.side_bet*2)
         losings = player.bet
-      elsif lost?(player)
-        losings = player.side_bet + player.bet
       elsif draw?(player)
+        test_output = 'draw'
         winnings = player.bet #return bet
         losings = player.side_bet
 
       elsif bust?(player) #player lose
+        test_output = 'bust'
         losings = player.side_bet + player.bet
 
       elsif won?(player) #player win
+        test_output = 'player won'
         winnings = (player.bet * 2)
         losings = player.side_bet
 
       elsif surrender?(player)
+        test_output = 'player surrendered'
         winnings = (player.bet/2)
         losings = (player.bet/2)
 
+      elsif lost?(player) #elsif !blackjack?(@house) && !blackjack?(player) && (player_1 player_2 player_3)
+        test_output = 'player lost'
+        losings = player.side_bet + player.bet
       end
 
       player.chips = player.chips + winnings
+      puts test_output
       puts "#{player} won #{winnings} chips."
       puts "#{player} lost #{losings} chips."
       puts "#{player} has #{player.chips} chips."

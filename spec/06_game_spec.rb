@@ -97,21 +97,96 @@ describe "Game" do
       expect(game.bust?(game.house)).to eq(false)
     end
   end
-=begin
-  describe '#insurance' do # TODO: how to test?
-    it 'does function if first card is Ace' do
-      game.house.cards = [{card: "HA", value: 11, running_count: -1}, {card: "S10", value: 10, running_count: -1}]
-      #STDOUT.should_receive(:puts).with('Would you like insurance? (y/N)')
-      expect(game.insurance).to eq(nil)
 
-      game.house.cards = [{card: "HA", value: 11, running_count: -1}, {card: "S9", value: 9, running_count: -1}]
-      expect(game.insurance).to eq(nil)
+  describe '#distribute_winnings: only house has blackjack' do
+    def setup
+      game.house.cards = [{card: "HA", value: 11, running_count: -1}, {card: "S10", value: 10, running_count: -1}]
+      game.player_1.cards = [{card: "H2", value: 2, running_count: 1}, {card: "S9", value: 9, running_count: 0}]
+
+      game.player_1.bet = 20
+      game.player_1.side_bet = 5
+      game.player_1.chips = 50
+
+      winnings = game.player_1.side_bet*2
+      losings = game.player_1.bet
+      [winnings, losings, game.player_1.chips]
     end
 
-    it 'doesn\'t do function if first card is not Ace' do
-      game.house.cards = [{card: "HK", value: 10, running_count: -1}, {card: "S10", value: 10, running_count: -1}]
-      expect(game.insurance).to eq(nil)
+    it 'calculates winnings' do
+      array = setup
+      expect { game.distribute_winnings }.to output(/won #{array[0]} chips./).to_stdout
+
+    end
+    it 'calculates losings' do
+      array = setup
+      expect { game.distribute_winnings }.to output(/lost #{array[1]} chips./).to_stdout
+
+    end
+    it 'calculates final chips' do
+      array = setup
+      expect { game.distribute_winnings }.to output(/has #{(array[0] + array[2])} chips./).to_stdout
     end
   end
-=end
+
+  describe '#distribute_winnings: house and current player has blackjack' do # TODO: how to test?
+    def setup
+      game.house.cards = [{card: "HA", value: 11, running_count: -1}, {card: "S10", value: 10, running_count: -1}]
+      game.player_1.cards = [{card: "SA", value: 11, running_count: -1}, {card: "SJ", value: 10, running_count: -1}]
+
+
+      game.player_1.bet = 20
+      game.player_1.side_bet = 5
+      game.player_1.chips = 50
+
+      winnings = game.player_1.bet + (game.player_1.side_bet*2)
+      losings = 0
+      [winnings, losings, game.player_1.chips]
+    end
+    it 'calculates winnings' do
+      array = setup
+      expect { game.distribute_winnings }.to output(/won #{array[0]} chips./).to_stdout
+
+    end
+    it 'calculates losings' do
+      array = setup
+      expect { game.distribute_winnings }.to output(/lost #{array[1]} chips./).to_stdout
+
+    end
+    it 'calculates final chips' do
+      array = setup
+      expect { game.distribute_winnings }.to output(/has #{array[0] + array[2]} chips./).to_stdout
+    end
+
+  end
+
+  describe '#distribute_winnings: only other player has blackjack' do # TODO: how to test?
+    def setup
+      game.player_2.cards = [{card: "HA", value: 11, running_count: -1}, {card: "S10", value: 10, running_count: -1}]
+      game.player_1.cards = [{card: "D10", value: 10, running_count: -1}, {card: "SJ", value: 10, running_count: -1}]
+
+
+      game.player_1.bet = 20
+      game.player_1.side_bet = 5
+      game.player_1.chips = 50
+
+      winnings = 0
+      losings = game.player_1.side_bet + game.player_1.bet
+      [winnings, losings, game.player_1.chips]
+    end
+    it 'calculates winnings' do
+      array = setup
+      expect { game.distribute_winnings }.to output(/won #{array[0]} chips./).to_stdout
+
+    end
+    it 'calculates losings' do
+      array = setup
+      expect { game.distribute_winnings }.to output(/lost #{array[1]} chips./).to_stdout
+
+    end
+    it 'calculates final chips' do
+      array = setup
+      expect { game.distribute_winnings }.to output(/has #{array[0] + array[2]} chips./).to_stdout
+    end
+
+  end
 end
