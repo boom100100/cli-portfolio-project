@@ -1,5 +1,5 @@
 class Deck
-  attr_reader :cards
+  attr_accessor :cards
   CARDS = [
     {card: "S2", value: 2, running_count: 1}, {card: "S3", value: 3, running_count: 1}, {card: "S4", value: 4, running_count: 1}, {card: "S5", value: 5, running_count: 1}, {card: "S6", value: 6, running_count: 1}, {card: "S7", value: 7, running_count: 0}, {card: "S8", value: 8, running_count: 0}, {card: "S9", value: 9, running_count: 0}, {card: "S10", value: 10, running_count: -1}, {card: "SJ", value: 10, running_count: -1}, {card: "SQ", value: 10, running_count: -1}, {card: "SK", value: 10, running_count: -1}, {card: "SA", value: 11, running_count: -1},
     {card: "C2", value: 2, running_count: 1}, {card: "C3", value: 3, running_count: 1}, {card: "C4", value: 4, running_count: 1}, {card: "C5", value: 5, running_count: 1}, {card: "C6", value: 6, running_count: 1}, {card: "C7", value: 7, running_count: 0}, {card: "C8", value: 8, running_count: 0}, {card: "C9", value: 9, running_count: 0}, {card: "C10", value: 10, running_count: -1}, {card: "CJ", value: 10, running_count: -1}, {card: "CQ", value: 10, running_count: -1}, {card: "CK", value: 10, running_count: -1}, {card: "CA", value: 11, running_count: -1},

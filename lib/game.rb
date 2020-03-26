@@ -76,10 +76,11 @@ class Game
     if over?
       distribute_winnings
       contemplate
+
     end
     play
     contemplate
-    check_cards
+
 
   end
 
@@ -138,10 +139,12 @@ class Game
         end
 
     else
-      player.send("#{type}=",Random.new.rand(limit))
-      player.chips = player.chips - player.send("#{type}")
+      if limit > 0
+        player.send("#{type}=",Random.new.rand(limit))
+        player.chips = player.chips - player.send("#{type}")
 
-      puts "The computer bets #{player.send("#{type}")}."
+        puts "The computer bets #{player.send("#{type}")}."
+      end
     end
   end
 
@@ -359,6 +362,7 @@ class Game
         test_output = 'player surrendered'
         winnings = (player.bet/2)
         losings = (player.bet/2)
+        player.is_playing = true
 
       elsif lost?(player) #elsif !blackjack?(@house) && !blackjack?(player) && (player_1 player_2 player_3)
         test_output = 'player lost'
@@ -385,21 +389,24 @@ class Game
 
   def contemplate
     puts ''
-    puts 'Would you like to continue (c), change tables (t), or finish this game (f)?'
+    puts 'Would you like to continue (c), change tables (t), or finish this game (q)?'
     cont(@player_1.move)
   end
 
   def cont(input)
+    puts ''
     if input == 'c' || input == 'C'
+      check_cards
       do_round
     elsif input == 't' || input == 'T'
       change_table
-    elsif input == 'f' || input == 'F'
-      puts 'Are you sure you want to leave? All your winnings and losses will reset. Enter "y" for yes and "n" for no.'
+    elsif input == 'q' || input == 'Q'
+      puts 'Are you sure you want to quit? All your winnings and losses will reset. Enter "y" for yes and "n" for no.'
       input = gets.chomp
       if input == 'n' || input == 'N'
         contemplate
       elsif input == 'y' || input == 'Y'
+        exit
       else
         puts 'Your input is invalid. Please try again.'
         cont('f')
@@ -411,7 +418,7 @@ class Game
   end
 
   def check_cards
-    if game.deck.cards.length < (20*@table)
+    if @deck.cards.length < (20*@table)
       puts 'It\'s time to reshuffle the cards.'
       @deck.cards = []
       @deck.make_decks(@table)
