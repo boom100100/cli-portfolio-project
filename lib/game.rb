@@ -108,9 +108,21 @@ class Game
   end
 
   def bet(player, limit, type) #todo write test
-    minimum = 5
+    minimum = 5.00
     if type == 'side_bet'
-      minimum = 0 #if limit < 5
+      minimum = 0.00 #if limit < 5
+    end
+
+    if player.chips < minimum
+      puts 'Would you like to buy more chips? Enter \'y\' or \'n.\''
+      input = player.move
+      if input == 'y' || input == 'Y'
+        player.chips = 500.00
+        limit = player.chips
+        puts "You now have #{player.chips} chips."
+      elsif input == 'n' || input == 'N'
+        exit
+      end
     end
 
     if player.is_a? Players::Human
@@ -140,7 +152,7 @@ class Game
 
     else
       if limit > 0
-        player.send("#{type}=",Random.new.rand(limit))
+        player.send("#{type}=",Random.new.rand(limit-1)+1)
         player.chips = player.chips - player.send("#{type}")
 
         puts "The computer bets #{player.send("#{type}")}."
@@ -161,11 +173,8 @@ class Game
         hit(player)
       end
       if player != @house
-        puts "This #{player.class} Player has the following cards:"
-        player.cards.each do |card|
-          reveal_card(card)
-        end
-        puts ''
+        reveal_cards(player)
+
       else
         puts "The house's hand has one face-up card:"
         reveal_card(player.cards[0])
@@ -192,8 +201,9 @@ class Game
         end
       end
     end
-    puts 'The house\'s other card is:'
-    reveal_card(@house.cards[1])
+    if @house.hand_value == 21
+      reveal_second
+    end
 
   end
 
@@ -205,6 +215,10 @@ class Game
   end
 
   def do_turn(player)
+    if player == @house
+      reveal_second
+      reveal_cards(player)
+    end
     playing = true
     while playing
       puts ''
@@ -219,10 +233,7 @@ class Game
         puts "#{player} has chosen to hit."
         hit(player)
         puts ''
-        puts 'Your cards are:'
-        player.cards.each do |card|
-          puts "#{Deck.interpret(card)}"
-        end
+        reveal_cards(player)
         playing = false if player.hand_value >= 21
       when '3'
         puts "#{player} has chosen to double."
@@ -238,7 +249,7 @@ class Game
       when '4'
         if player.cards.length == 2
           puts "#{player} has chosen to split."
-          split
+          split(player)
         else
           puts 'It is too late to split.'
           do_turn(player)
@@ -267,7 +278,20 @@ class Game
     hit(player)
   end
 
-  def split # TODO:
+  def split(player) # TODO: looking for .cards where cards needs to be rewritten for multiple hands
+    #check cards for duplicate value (card[:value] matches other && card[:card][0..-1] matches other)
+    set = Set.new
+    player.cards.each do |card|
+      card.map{|k,v|
+
+      }
+    end
+    duplicate = player.cards.delete(player.cards.find { |e|
+      #must account for hash values, not entire element
+      !set.add?(e)
+    })
+    player.hands << duplicate
+
   end
 
   def surrender(player)
@@ -278,6 +302,19 @@ class Game
     puts Deck.interpret(card)
   end
 
+  def reveal_cards(player)
+    puts ''
+    puts "This #{player.class} Player has the following cards:"
+    player.cards.each do |card|
+      reveal_card(card)
+    end
+  end
+
+  def reveal_second
+    puts 'The house\'s other card is:'
+    reveal_card(@house.cards[1])
+  end
+
 
 
   def won?(player)
@@ -286,9 +323,7 @@ class Game
     #sc3: p has lower than house, house busted, no one else has blackjack
     blackjack_getter = @players.select {|e| e if blackjack?(e)}
 
-    if blackjack?(player) && !blackjack?(@house)
-      return true
-    elsif (player.hand_value > @house.hand_value && !bust?(player) && blackjack_getter.length == 0)
+    if (player.hand_value > @house.hand_value && !bust?(player) && blackjack_getter.length == 0)
       return true
     elsif bust?(@house) && !bust?(player) && blackjack_getter.length == 0
       return true
@@ -334,57 +369,75 @@ class Game
 
   def distribute_winnings
     @betters.each do |player|
+      reveal_cards(player)
+    end
+    @betters.each do |player|
       winnings = 0
       losings = 0
-      test_output = ''
+
       if blackjack?(@house) && blackjack?(player) #double blackjack #####draw + insurance winnings - no change to bets
-        test_output = 'double blackjack'
         winnings = (player.side_bet*2) + player.bet#don't double bet - it's a draw
+
       elsif blackjack?(@house) #house blackjack ########bet value is zero, side_bet stays the same
-        test_output = 'house blackjack'
         winnings = (player.side_bet*2)
         losings = player.bet
+
+      elsif blackjack?(player)
+        winnings = (player.bet*1.5)
+        losings = player.side_bet
+
       elsif draw?(player)
-        test_output = 'draw'
         winnings = player.bet #return bet
         losings = player.side_bet
 
       elsif bust?(player) #player lose
-        test_output = 'bust'
         losings = player.side_bet + player.bet
 
-      elsif won?(player) #player win
-        test_output = 'player won'
-        winnings = (player.bet * 2)
-        losings = player.side_bet
-
       elsif surrender?(player)
-        test_output = 'player surrendered'
         winnings = (player.bet/2)
         losings = (player.bet/2)
         player.is_playing = true
 
-      elsif lost?(player) #elsif !blackjack?(@house) && !blackjack?(player) && (player_1 player_2 player_3)
-        test_output = 'player lost'
+      elsif lost?(player)
         losings = player.side_bet + player.bet
+
+      elsif won?(player) #player win
+        winnings = (player.bet * 2)
+        losings = player.side_bet
       end
 
       player.chips = player.chips + winnings
-      puts test_output
+
+      puts ''
       puts "#{player} won #{winnings} chips."
       puts "#{player} lost #{losings} chips."
       puts "#{player} has #{player.chips} chips."
 
+      if player == @player_1
+        player.net_winnings = player.net_winnings + winnings - losings
+        puts "Net winnings is #{player.net_winnings} chips."
+        if player.net_winnings > 1000000
+          @house.angry = true
+        end
+      end
       reset(player)
 
     end
-    @house.cards = []
+    if @house.angry
+      puts 'The House says:'
+      puts 'Get out! And take your winnings with you!'
+      exit
+    end
+    @house.hands.each {|hand| hand = []}
   end
 
   def reset(player)
     player.bet = 0
     player.side_bet = 0
+
+    player.hands = []
     player.cards = []
+    player.hands << player.cards
   end
 
   def contemplate
@@ -419,9 +472,29 @@ class Game
 
   def check_cards
     if @deck.cards.length < (20*@table)
+      puts ''
+      puts '**********************************'
+      puts '**********************************'
+      puts '**********************************'
       puts 'It\'s time to reshuffle the cards.'
+      puts '**********************************'
+      puts '**********************************'
+      puts '**********************************'
+      puts ''
       @deck.cards = []
       @deck.make_decks(@table)
+
+      @players.each do |player|
+        player.hands.each do |hand|
+
+          remove_extras = hand.each do |card|
+            i = @deck.cards.index(card)
+            @deck.cards.delete_at(i) if i
+          end
+          remove_extras if hand
+        end
+
+      end
     end
   end
 end

@@ -5,7 +5,7 @@ describe 'Players::House' do
   end
 
   it "Has a variable called anger" do
-    expect(defined?(house.anger)).to eq("method")
+    expect(defined?(house.angry)).to eq("method")
   end
 
 

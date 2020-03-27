@@ -2,6 +2,7 @@ require "spec_helper"
 
 describe "Game" do
   let(:game){Game.new}
+
   it "Has a deck" do
     game.deck.make_decks(1)
     expect(game.deck.cards).to include({card: "S3", value: 3, running_count: 1})
@@ -32,7 +33,7 @@ describe "Game" do
       expect(game.deck.cards.select{|card| card[:card] == 'S2'}.length).to eq(8)
     end
     it 'allows duplicate cards when there are multiple decks' do
-      decks = Random.new.rand(8)
+      decks = Random.new.rand(7)+1 #+1 to prevent return of 0
       allow_any_instance_of(Kernel).to receive(:gets).and_return(decks.to_s)
       expect(game.choose_table).to eq(decks.to_s)
       expect(game.deck.cards.select{|card| card[:card] == 'S2'}.length).to eq(decks)
@@ -42,7 +43,7 @@ describe "Game" do
   describe '#bet' do
     it 'recognizes valid output' do
       game.player_1.chips = 500
-      bet = Random.new.rand(game.player_1.chips)
+      bet = Random.new.rand(game.player_1.chips-10)+1 #+1 to prevent return of 0
 
       #input is wager
       allow_any_instance_of(Kernel).to receive(:gets).and_return(bet.to_s)
@@ -235,7 +236,7 @@ describe "Game" do
       game.player_1.side_bet = 5
       game.player_1.chips = 50
 
-      winnings = game.player_1.bet*2
+      winnings = game.player_1.bet*1.5
       losings = game.player_1.side_bet
       [winnings, losings, game.player_1.chips]
     end
@@ -274,7 +275,7 @@ describe "Game" do
       game.player_2.side_bet = 5
       game.player_2.chips = 50
 
-      winnings2 = game.player_2.bet*2
+      winnings2 = game.player_2.bet*1.5
       losings2 = game.player_2.side_bet
 
       [winnings1, losings1, game.player_1.chips, winnings2, losings2, game.player_2.chips]
@@ -410,5 +411,63 @@ describe "Game" do
       expect { game.distribute_winnings }.to output(/has #{array[0] + array[2]} chips./).to_stdout
     end
 
+  end
+
+  describe '#check_cards' do
+    it 'removes cards from deck if present in player\'s hand' do
+      game.player_1.hands = []
+      game.player_2.hands = []
+
+      game.player_1.cards = [{card: "S2", value: 2, running_count: 1}, {card: "S3", value: 3, running_count: 1}, {card: "S4", value: 4, running_count: 1}]
+      game.player_2.cards = [{card: "S5", value: 5, running_count: 1}, {card: "S6", value: 6, running_count: 1}, {card: "S7", value: 7, running_count: 0}]
+
+      game.player_1.hands << game.player_1.cards
+      game.player_2.hands << game.player_2.cards
+
+      game.table = 1
+      game.check_cards
+      expect(game.deck.cards.length).to eq(46)
+    end
+
+    it 'doesn\'t delete duplicate cards if not appropriate' do
+
+      game.player_1.hands = []
+
+      game.player_1.cards = [{card: "S2", value: 2, running_count: 1}, {card: "S3", value: 3, running_count: 1}, {card: "S4", value: 4, running_count: 1}]
+
+      game.player_1.hands << game.player_1.cards
+
+      game.table = 2
+      game.check_cards
+      expect(game.deck.cards.length).to eq(101)
+    end
+
+    it 'deletes duplicate cards if appropriate' do
+      game.player_1.hands = []
+
+      game.player_1.cards = [{card: "S2", value: 2, running_count: 1}, {card: "S2", value: 2, running_count: 1}, {card: "S3", value: 3, running_count: 1}, {card: "S4", value: 4, running_count: 1}]
+
+      game.player_1.hands << game.player_1.cards
+
+      game.table = 2
+      game.check_cards
+      expect(game.deck.cards.length).to eq(100)
+    end
+  end
+
+  describe '#split' do
+    it 'finds duplicate value if present' do
+      game.player_1.cards = []
+    end
+
+    it 'doesn''t find duplicate value if there is none' do
+      game.player_1.cards = []
+    end
+
+    it 'creates two hands' do
+    end
+
+    it 'can split if hand started with more than 2 cards' do
+    end
   end
 end
