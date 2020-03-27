@@ -341,13 +341,13 @@ class Game
     #sc1: p has blackjack, house does not
     #sc2: p has higher than house, not busting, no one else has blackjack
     #sc3: p has lower than house, house busted, no one else has blackjack
-    blackjack_getter = @players.select {|player|
-      player.hands.each do |hand|
-        return player if blackjack?(player, hand)
+    blackjack_getter = @players.select {|gambler|
+      gambler.hands.each do |hand|
+        return gambler if blackjack?(gambler, hand)
       end
     }
 
-    if (player.hand_value(hand) > @house.hand_value(@house.cards) && !bust?(player) && blackjack_getter.length == 0)
+    if (player.hand_value(hand) > @house.hand_value(@house.cards) && !bust?(player, hand) && blackjack_getter.length == 0)
       return true
     elsif bust?(@house, @house.cards) && !bust?(player, hand) && blackjack_getter.length == 0
       return true
@@ -380,7 +380,7 @@ class Game
 
   def lost?(player, hand)
     blackjack_getter = @players.select {|player| player if blackjack?(player, hand)}
-    (bust?(player) || (blackjack_getter.length > 0 && !blackjack_getter.include?(player)) || ((@house.hand_value > player.hand_value) && !bust?(@house))) ? true : false
+    (bust?(player, hand) || (blackjack_getter.length > 0 && !blackjack_getter.include?(player)) || ((@house.hand_value(@house.cards) > player.hand_value(hand)) && !bust?(@house, @house.cards))) ? true : false
   end
 
   def surrender?(player)
