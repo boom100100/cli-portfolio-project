@@ -9,7 +9,7 @@ describe "Player" do
     end
 
     it "Has a variable called hand_value" do
-      expect(defined?(player.hand_value)).to eq("method")
+      expect(defined?(player.hand_value(player.cards))).to eq("method")
     end
   end
 
@@ -20,7 +20,7 @@ describe "Player" do
         {card: "C4", value: 4, running_count: 1},
         {card: "HQ", value: 10, running_count: -1}
       ]
-      expect(player.hand_value).to eq(17)
+      expect(player.hand_value(player.cards)).to eq(17)
 
 
       player.cards = [
@@ -28,7 +28,7 @@ describe "Player" do
         {card: "D4", value: 4, running_count: 1},
         {card: "HQ", value: 10, running_count: -1}
       ]
-      expect(player.hand_value).to eq(24)
+      expect(player.hand_value(player.cards)).to eq(24)
 
 
       player.cards = [
@@ -36,21 +36,21 @@ describe "Player" do
         {card: "DA", value: 11, running_count: -1},
         {card: "HQ", value: 10, running_count: -1}
       ]
-      expect(player.hand_value).to eq(12)
+      expect(player.hand_value(player.cards)).to eq(12)
 
       player.cards = [
         {card: "CA", value: 11, running_count: -1},
         {card: "DA", value: 11, running_count: -1},
         {card: "HA", value: 11, running_count: -1}
       ]
-      expect(player.hand_value).to eq(13)
+      expect(player.hand_value(player.cards)).to eq(13)
 
       player.cards = [
         {card: "CA", value: 11, running_count: -1},
         {card: "D4", value: 4, running_count: 1},
         {card: "HA", value: 11, running_count: -1}
       ]
-      expect(player.hand_value).to eq(16)
+      expect(player.hand_value(player.cards)).to eq(16)
 
       player.cards = [
         {card: "CJ", value: 10, running_count: -1},
@@ -58,7 +58,7 @@ describe "Player" do
         {card: "HA", value: 11, running_count: -1},
         {card: "H7", value: 7, running_count: 0}
       ]
-      expect(player.hand_value).to eq(22)
+      expect(player.hand_value(player.cards)).to eq(22)
 
       player.cards = [
         {card: "CJ", value: 10, running_count: -1},
@@ -66,7 +66,7 @@ describe "Player" do
         {card: "HA", value: 11, running_count: -1},
         {card: "H6", value: 6, running_count: 1}
       ]
-      expect(player.hand_value).to eq(21)
+      expect(player.hand_value(player.cards)).to eq(21)
     end
   end
 end

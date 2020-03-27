@@ -9,10 +9,10 @@ class Player
     @is_leaving = false
   end
 
-  def hand_value
+  def hand_value(hand)
     value = 0
     secondary_value = []
-    @cards.each do |card|
+    hand.each do |card|
       secondary_value << 1 if card[:value] == 11
       value = value + card[:value]
 

@@ -170,7 +170,7 @@ class Game
     @players.each do |player|
       puts ''
       while player.cards.length < 2
-        hit(player)
+        hit(player.cards)
       end
       if player != @house
         reveal_cards(player)
@@ -209,12 +209,18 @@ class Game
 
   def play
     @players.each do |player|
-      do_turn(player)
+      player.hands.each do |hand|
+        do_turn(player, hand)
+      end
     end
-    distribute_winnings
+    @betters.each do |player|
+      player.hands.each do |hand|
+        distribute_winnings(player, hand)
+      end
+    end
   end
 
-  def do_turn(player)
+  def do_turn(player, hand)
     if player == @house
       reveal_second
       reveal_cards(player)
@@ -231,7 +237,7 @@ class Game
         playing = false
       when '2'
         puts "#{player} has chosen to hit."
-        hit(player)
+        hit(hand)
         puts ''
         reveal_cards(player)
         playing = false if player.hand_value >= 21
@@ -240,19 +246,19 @@ class Game
         new_bet = player.bet * 2
         if new_bet <= player.chips
           player.chips = player.chips - player.bet
-          double(player, new_bet)
+          double(player, hand, new_bet)
           playing = false
         else
           puts "#{player} doesn\'t have enough chips to double."
-          do_turn(player)
+          do_turn(player, hand)
         end
       when '4'
         if player.cards.length == 2
           puts "#{player} has chosen to split."
-          split(player)
+          split(player, hand)
         else
           puts 'It is too late to split.'
-          do_turn(player)
+          do_turn(player, hand)
         end
       when '5'
         if player.cards.length == 2
@@ -264,34 +270,42 @@ class Game
         end
       else
         puts 'That is an invalid move.'
-        do_turn(player)
+        do_turn(player, hand)
       end
     end
   end
 
-  def hit(player) #gives card to player, removes card from @cards
-    player.cards << @deck.cards.shift
+  def hit(hand) #gives card to player, removes card from @cards
+    hand << @deck.cards.shift
   end
 
-  def double(player, new_bet) #test result is wrong
+  def double(player, hand, new_bet) #test result is wrong
     player.bet = new_bet
-    hit(player)
+    hit(hand)
   end
 
-  def split(player) # TODO: looking for .cards where cards needs to be rewritten for multiple hands
+  def split(player, hand) # TODO: looking for .cards where cards needs to be rewritten for multiple hands
     #check cards for duplicate value (card[:value] matches other && card[:card][0..-1] matches other)
     set = Set.new
-    player.cards.each do |card|
-      card.map{|k,v|
-
-      }
+    i = 0
+    duplicate = nil
+    hand.each do |card|
+      hand.each do |comp_card|
+        duplicate = comp_card if ((card != comp_card) && (card[:value] == comp_card[:value]) && (card[:card][1..-1] == comp_card[:card][1..-1]))
+      end
     end
-    duplicate = player.cards.delete(player.cards.find { |e|
-      #must account for hash values, not entire element
-      !set.add?(e)
-    })
-    player.hands << duplicate
 
+    if duplicate
+
+      hand.delete_at(hand.index(duplicate))
+      player.hands << [duplicate]
+      player.bet << player.bet[0]
+      puts player.bet.to_s
+
+    else
+      puts 'There are no duplicates.'
+      do_turn(player, hand)
+    end
   end
 
   def surrender(player)
@@ -305,8 +319,14 @@ class Game
   def reveal_cards(player)
     puts ''
     puts "This #{player.class} Player has the following cards:"
-    player.cards.each do |card|
-      reveal_card(card)
+
+    player.hands.each do |hand|
+      if player.hands.length > 1
+        puts 'This hand has:'
+      end
+      hand.each do |card|
+        reveal_card(card)
+      end
     end
   end
 
@@ -317,15 +337,19 @@ class Game
 
 
 
-  def won?(player)
+  def won?(player, hand)
     #sc1: p has blackjack, house does not
     #sc2: p has higher than house, not busting, no one else has blackjack
     #sc3: p has lower than house, house busted, no one else has blackjack
-    blackjack_getter = @players.select {|e| e if blackjack?(e)}
+    blackjack_getter = @players.select {|player|
+      player.hands.each do |hand|
+        return player if blackjack?(player, hand)
+      end
+    }
 
-    if (player.hand_value > @house.hand_value && !bust?(player) && blackjack_getter.length == 0)
+    if (player.hand_value(hand) > @house.hand_value(@house.cards) && !bust?(player) && blackjack_getter.length == 0)
       return true
-    elsif bust?(@house) && !bust?(player) && blackjack_getter.length == 0
+    elsif bust?(@house, @house.cards) && !bust?(player, hand) && blackjack_getter.length == 0
       return true
     else
       false
@@ -346,16 +370,16 @@ class Game
     false
   end
 
-  def blackjack?(player)
-    (player.hand_value == 21 && player.cards.length == 2) ? true : false
+  def blackjack?(player, hand)
+    (player.hand_value(hand) == 21 && hand.length == 2) ? true : false
   end
 
-  def bust?(player) #can't draw more cards
-    player.hand_value > 21
+  def bust?(player, hand) #can't draw more cards
+    player.hand_value(hand) > 21
   end
 
-  def lost?(player)
-    blackjack_getter = @players.select {|player| player if blackjack?(player)}
+  def lost?(player, hand)
+    blackjack_getter = @players.select {|player| player if blackjack?(player, hand)}
     (bust?(player) || (blackjack_getter.length > 0 && !blackjack_getter.include?(player)) || ((@house.hand_value > player.hand_value) && !bust?(@house))) ? true : false
   end
 
@@ -363,11 +387,11 @@ class Game
     player.is_playing == false
   end
 
-  def draw?(player)
-    !bust?(player) && player.hand_value == @house.hand_value
+  def draw?(player, hand)
+    !bust?(player, hand) && player.hand_value(hand) == @house.hand_value(@house.cards)
   end
 
-  def distribute_winnings
+  def distribute_winnings(hand, hand_index)
     @betters.each do |player|
       reveal_cards(player)
     end
@@ -375,34 +399,34 @@ class Game
       winnings = 0
       losings = 0
 
-      if blackjack?(@house) && blackjack?(player) #double blackjack #####draw + insurance winnings - no change to bets
-        winnings = (player.side_bet*2) + player.bet#don't double bet - it's a draw
+      if blackjack?(@house, @house.cards) && blackjack?(player, hand) #double blackjack #####draw + insurance winnings - no change to bets
+        winnings = (player.side_bet*2) + player.bet[hand_index]#don't double bet - it's a draw
 
       elsif blackjack?(@house) #house blackjack ########bet value is zero, side_bet stays the same
         winnings = (player.side_bet*2)
-        losings = player.bet
+        losings = player.bet[hand_index]
 
       elsif blackjack?(player)
-        winnings = (player.bet*1.5)
+        winnings = (player.bet[hand_index]*1.5)
         losings = player.side_bet
 
       elsif draw?(player)
-        winnings = player.bet #return bet
+        winnings = player.bet[hand_index] #return bet
         losings = player.side_bet
 
-      elsif bust?(player) #player lose
-        losings = player.side_bet + player.bet
+      elsif bust?(player, hand) #player lose
+        losings = player.side_bet + player.bet[hand_index]
 
       elsif surrender?(player)
-        winnings = (player.bet/2)
-        losings = (player.bet/2)
+        winnings = (player.bet[hand_index]/2)
+        losings = (player.bet[hand_index]/2)
         player.is_playing = true
 
       elsif lost?(player)
-        losings = player.side_bet + player.bet
+        losings = player.side_bet + player.bet[hand_index]
 
-      elsif won?(player) #player win
-        winnings = (player.bet * 2)
+      elsif won?(player, hand) #player win
+        winnings = (player.bet[hand_index] * 2)
         losings = player.side_bet
       end
 

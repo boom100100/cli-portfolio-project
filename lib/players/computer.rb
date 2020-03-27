@@ -5,7 +5,7 @@ module Players
     def initialize
       super
       @chips = 500.00
-      @bet = 0
+      @bet = [0]
       @side_bet = 0
     end
     def move
