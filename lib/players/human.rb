@@ -11,7 +11,7 @@ module Players
     end
 
 
-    def move(hand = nil) #bet <= chips ? bet = input : move
+    def move(hand = nil)
       input = gets.chomp
       input
     end
