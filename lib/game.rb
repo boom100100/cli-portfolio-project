@@ -15,7 +15,8 @@ class Game
   end
 
   def self.tutorial
-    puts 'The object of the game is to beat the dealer.'
+    puts ''
+    puts 'The object of Blackjack is to beat the dealer.'
     puts ''
     puts 'Gameplay works as follows.'
     puts 'Place an initial bet.'
@@ -35,6 +36,7 @@ class Game
   end
 
   def self.strategy
+    puts ''
     puts 'Counting cards is the best way to beat the house.'
     puts 'To do so, assign a value to all cards on the table.'
     puts 'Assign +1 to 2-6, 0 to 7-9, and -1 to 10-A.'
@@ -55,9 +57,6 @@ class Game
     puts ''
     change_table
 
-
-
-    #if game.deck.cards = 0 puts "I'm opening a new deck."
   end
 
   def change_table
@@ -277,21 +276,25 @@ class Game
 
   def split(player, hand, hand_index)
     #check cards for duplicate value (card[:value] matches other && card[:card][0..-1] matches other)
-    i = 0
+    #i = 0
     duplicate = nil
     hand.each do |card|
       hand.each do |comp_card|
-        duplicate = comp_card if ((card != comp_card) && (card[:value] == comp_card[:value]) && (card[:card][1..-1] == comp_card[:card][1..-1]))
+        duplicate = comp_card if (card != comp_card) && (card[:value] == comp_card[:value]) && (card[:card][1..-1] == comp_card[:card][1..-1])
       end
     end
 
-    if duplicate.is_a?(Hash)
-      hand.delete_at(hand.index(duplicate))
-      hit(hand)
+    if duplicate
+
+      index = hand.index(duplicate)
+      hand.delete_at(index) if !index.nil?
+
+      hit(hand) if hand.length < 2
       reveal_cards(player, hand)
 
       new_hand = [duplicate]
-      hit(new_hand)
+      hit(new_hand) if new_hand.length < 2
+
       player.hands << new_hand
       reveal_cards(player, new_hand)
 
@@ -309,14 +312,13 @@ class Game
   end
 
   def reveal_card(card)
-    puts card.to_s
     puts Deck.interpret(card)
   end
 
   def reveal_cards(player, hand)
     puts ''
     puts "This #{player.class} Player has the following cards in this hand:"
-    #puts hand.to_s
+
     hand.each do |card|
       reveal_card(card) if card
     end
