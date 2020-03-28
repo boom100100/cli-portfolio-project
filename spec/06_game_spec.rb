@@ -501,9 +501,12 @@ describe "Game" do
 
       game.player_1.hands << game.player_1.cards
 
+      game.deck.make_decks(1)
+
       game.split(game.player_1, game.player_1.cards, 0)
 
-      expect(game.player_1.hands).to eq([[{card: "SA", value: 11, running_count: -1}], [{card: "CA", value: 11, running_count: -1}]])
+      expect(game.player_1.hands[0]).to include({card: "SA", value: 11, running_count: -1})
+      expect(game.player_1.hands[1]).to include({card: "CA", value: 11, running_count: -1})
     end
 
     it 'doesn\'t find duplicate value if there is none' do
@@ -511,6 +514,8 @@ describe "Game" do
       game.player_1.cards = [{card: "CA", value: 11, running_count: -1}, {card: "S10", value: 10, running_count: -1}]
 
       game.player_1.hands << game.player_1.cards
+
+      game.deck.make_decks(1)
 
       game.split(game.player_1, game.player_1.cards, 0)
 
@@ -534,10 +539,16 @@ describe "Game" do
 
       game.player_1.hands << game.player_1.cards
 
+      game.deck.make_decks(1)
+
       game.split(game.player_1, game.player_1.cards, 0)
 
       expect(game.player_1.hands.length).to eq(2)
-      expect(game.player_1.hands).to eq([[{:card=>"SA", :value=>11, :running_count=>-1}, {:card=>"H2", :value=>2, :running_count=>1}], [{:card=>"CA", :value=>11, :running_count=>-1}]])
+      expect(game.player_1.hands[0].length).to eq(2)
+      expect(game.player_1.hands[1].length).to eq(2)
+
+      expect(game.player_1.hands[0]).to eq([{:card=>"SA", :value=>11, :running_count=>-1}, {:card=>"H2", :value=>2, :running_count=>1}])
+      expect(game.player_1.hands[1]).to include({:card=>"CA", :value=>11, :running_count=>-1})
     end
 
     it 'can split if player already has multiple hands' do
@@ -547,11 +558,14 @@ describe "Game" do
       game.player_1.hands << game.player_1.cards
       game.player_1.hands << second_hand
 
+      game.deck.make_decks(1)
       game.split(game.player_1, game.player_1.cards, 0)
 
       expect(game.player_1.hands.length).to eq(3)
 
-      expect(game.player_1.hands).to eq([[{:card=>"SA", :value=>11, :running_count=>-1}, {:card=>"H2", :value=>2, :running_count=>1}], [{:card=>"S2", :value=>2, :running_count=>1}], [{:card=>"CA", :value=>11, :running_count=>-1}]])
+      expect(game.player_1.hands[0]).to eq([{:card=>"SA", :value=>11, :running_count=>-1}, {:card=>"H2", :value=>2, :running_count=>1}])
+      expect(game.player_1.hands[1]).to include({:card=>"S2", :value=>2, :running_count=>1})
+      expect(game.player_1.hands[2]).to include({:card=>"CA", :value=>11, :running_count=>-1})
     end
   end
 end
