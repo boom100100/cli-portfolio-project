@@ -5,7 +5,7 @@ class Player
     @hands = []
     @cards = [] #first hand
     @hands << @cards
-    @is_playing = true
+    @is_playing = [true]
     @is_leaving = false
   end
 

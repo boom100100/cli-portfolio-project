@@ -10,11 +10,7 @@ class Game
     @player_2 = Players::Computer.new
     @player_3 = Players::Computer.new
 
-    @betters = []
-    @players = []
-    @betters << @player_1
-    @betters << @player_2
-    @betters << @player_3
+    @betters = [@player_1, @player_2, @player_3]
     @players = [*@betters, @house]
   end
 
@@ -74,9 +70,8 @@ class Game
     deal
     insurance
     if over?
-      distribute_winnings
+      distribute
       contemplate
-
     end
     play
     contemplate
@@ -107,7 +102,7 @@ class Game
     input #doesn't need this return value
   end
 
-  def bet(player, limit, type) #todo write test
+  def bet(player, limit, type, hand_index = 0)
     minimum = 5.00
     if type == 'side_bet'
       minimum = 0.00 #if limit < 5
@@ -133,29 +128,31 @@ class Game
       wager = player.move
 
         if wager.to_i && wager.to_i <= limit && wager.to_i >= minimum #bets just enough
-          player.send("#{type}=",wager.to_i)
-          #player.bet = wager.to_i
-          player.chips = player.chips - player.send("#{type}")
+          player.send("#{type}=",wager.to_i, hand_index)
+          #player.bet[hand_index] = wager.to_i
+          player.chips = player.chips - player.bet[hand_index]
           puts ''
-          puts "Your bet is #{player.send("#{type}")} chips."
+          puts "Your bet is #{player.bet[hand_index]} chips."
         elsif wager.to_i && wager.to_i > limit #bets too much
           puts "That wager exceeds what you can bet."
-          bet(player, limit, type)
+          bet(player, limit, type, hand_index)
         elsif wager.to_i != "0" && wager.to_i == 0
           puts 'Invalid input.'
-          bet(player, limit, type)
+          bet(player, limit, type, hand_index)
         elsif wager.to_i && wager.to_i < minimum #bets too little
           puts "You can not bet fewer than #{minimum} chip(s)."
-          bet(player, limit, type)
+          bet(player, limit, type, hand_index)
 
         end
 
     else
       if limit > 0
-        player.send("#{type}=",Random.new.rand(limit-1)+1)
-        player.chips = player.chips - player.send("#{type}")
+        comp_bet = Random.new.rand(1..limit)
+        player.send("#{type}=",comp_bet, hand_index)
+        #player.bet[hand_index] = Random.new.rand(1..limit)
+        player.chips = player.chips - player.bet[hand_index]
 
-        puts "The computer bets #{player.send("#{type}")}."
+        puts "The computer bets #{player.bet[hand_index]}."
       end
     end
   end
@@ -173,7 +170,7 @@ class Game
         hit(player.cards)
       end
       if player != @house
-        reveal_cards(player)
+        reveal_cards(player, player.cards)
 
       else
         puts "The house's hand has one face-up card:"
@@ -190,18 +187,18 @@ class Game
           puts 'Would you like insurance? (y/N)'
           input = gets.chomp
           if input == "y" || input == "Y"
-            bet(player, (player.bet/2), 'side_bet')
+            bet(player, (player.bet[0]/2.0), 'side_bet')
           elsif input == "n" || input == "N"
           else
             puts 'Your input is invalid.'
             insurance
           end
         else
-          bet(player, (player.bet/2), 'side_bet')
+          bet(player, (player.bet[0]/2.0), 'side_bet')
         end
       end
     end
-    if @house.hand_value == 21
+    if @house.hand_value(@house.cards) == 21
       reveal_second
     end
 
@@ -209,28 +206,24 @@ class Game
 
   def play
     @players.each do |player|
-      player.hands.each do |hand|
-        do_turn(player, hand)
+      player.hands.each_with_index do |hand, index|
+        do_turn(player, hand, index)
       end
     end
-    @betters.each do |player|
-      player.hands.each do |hand|
-        distribute_winnings(player, hand)
-      end
-    end
+    distribute
   end
 
-  def do_turn(player, hand)
+  def do_turn(player, hand, hand_index)
     if player == @house
       reveal_second
-      reveal_cards(player)
+      reveal_cards(player, hand)
     end
     playing = true
     while playing
       puts ''
       puts "#{player}, what would you like to do?"
       puts "Stand (1), hit (2), double (3), split (4), or surrender (5)?"
-      input = player.move
+      input = player.move(hand)
       case input
       when '1'
         puts "#{player} has chosen to stand."
@@ -239,38 +232,34 @@ class Game
         puts "#{player} has chosen to hit."
         hit(hand)
         puts ''
-        reveal_cards(player)
-        playing = false if player.hand_value >= 21
+        reveal_cards(player, hand)
+        playing = false if player.hand_value(hand) >= 21
       when '3'
         puts "#{player} has chosen to double."
-        new_bet = player.bet * 2
+        new_bet = player.bet[hand_index] * 2
         if new_bet <= player.chips
-          player.chips = player.chips - player.bet
-          double(player, hand, new_bet)
+          player.chips = player.chips - player.bet[hand_index]
+          double(player, hand, hand_index, new_bet)
+          reveal_cards(player, hand)
           playing = false
         else
           puts "#{player} doesn\'t have enough chips to double."
-          do_turn(player, hand)
+
         end
       when '4'
-        if player.cards.length == 2
-          puts "#{player} has chosen to split."
-          split(player, hand)
-        else
-          puts 'It is too late to split.'
-          do_turn(player, hand)
-        end
+        puts "#{player} has chosen to split."
+        split(player, hand, hand_index)
       when '5'
         if player.cards.length == 2
           puts "#{player} has chosen to surrender."
-          surrender(player) #late surrender
+          surrender(player, hand_index) #late surrender
           playing = false
         else
           puts 'It is too late to surrender.'
         end
       else
         puts 'That is an invalid move.'
-        do_turn(player, hand)
+        #do_turn(player, hand, hand_index)
       end
     end
   end
@@ -279,14 +268,15 @@ class Game
     hand << @deck.cards.shift
   end
 
-  def double(player, hand, new_bet) #test result is wrong
-    player.bet = new_bet
+  def double(player, hand, hand_index, new_bet) #test result is wrong
+
+    player.send('bet=',new_bet, hand_index)
     hit(hand)
+
   end
 
-  def split(player, hand) # TODO: looking for .cards where cards needs to be rewritten for multiple hands
+  def split(player, hand, hand_index)
     #check cards for duplicate value (card[:value] matches other && card[:card][0..-1] matches other)
-    set = Set.new
     i = 0
     duplicate = nil
     hand.each do |card|
@@ -295,39 +285,42 @@ class Game
       end
     end
 
-    if duplicate
-
+    if duplicate.is_a?(Hash)
       hand.delete_at(hand.index(duplicate))
-      player.hands << [duplicate]
-      player.bet << player.bet[0]
-      puts player.bet.to_s
+      hit(hand)
+      reveal_cards(player, hand)
+
+      new_hand = [duplicate]
+      hit(new_hand)
+      player.hands << new_hand
+      reveal_cards(player, new_hand)
+
+      player.send('bet=',player.bet[hand_index], hand_index)
+      player.chips = player.chips - player.bet[hand_index] #new bet must be removed from player's chips
+      player.is_playing << true
 
     else
       puts 'There are no duplicates.'
-      do_turn(player, hand)
     end
   end
 
-  def surrender(player)
-    player.is_playing = false
+  def surrender(player, hand_index)
+    player.is_playing[hand_index] = false
   end
 
   def reveal_card(card)
+    puts card.to_s
     puts Deck.interpret(card)
   end
 
-  def reveal_cards(player)
+  def reveal_cards(player, hand)
     puts ''
-    puts "This #{player.class} Player has the following cards:"
-
-    player.hands.each do |hand|
-      if player.hands.length > 1
-        puts 'This hand has:'
-      end
-      hand.each do |card|
-        reveal_card(card)
-      end
+    puts "This #{player.class} Player has the following cards in this hand:"
+    #puts hand.to_s
+    hand.each do |card|
+      reveal_card(card) if card
     end
+
   end
 
   def reveal_second
@@ -338,21 +331,22 @@ class Game
 
 
   def won?(player, hand)
-    #sc1: p has blackjack, house does not
-    #sc2: p has higher than house, not busting, no one else has blackjack
-    #sc3: p has lower than house, house busted, no one else has blackjack
-    blackjack_getter = @players.select {|gambler|
-      gambler.hands.each do |hand|
-        return gambler if blackjack?(gambler, hand)
-      end
-    }
 
-    if (player.hand_value(hand) > @house.hand_value(@house.cards) && !bust?(player, hand) && blackjack_getter.length == 0)
+    #sc1: p has higher than house, not busting, no one else has blackjack
+    #sc2: p didn't bust, house busted, no one else has blackjack
+    blackjack_hands = []
+    @players.each {|playr| playr.hands.each {|cards|
+      if blackjack?(playr, cards)
+        blackjack_hands << {player: playr, hand: cards}
+      end
+      }}
+
+    if (player.hand_value(hand) > @house.hand_value(@house.cards)) && (!bust?(player, hand)) && (blackjack_hands.empty?)
       return true
-    elsif bust?(@house, @house.cards) && !bust?(player, hand) && blackjack_getter.length == 0
+    elsif bust?(@house, @house.cards) && !bust?(player, hand) && blackjack_hands.empty?
       return true
     else
-      false
+      return false
     end
   end
 
@@ -362,9 +356,11 @@ class Game
   def over?
     #blackjack = over
     @players.each do |player|
-      if blackjack?(player)
-        puts "#{player} has blackjack!"
-        return blackjack?(player)
+      player.hands.each do |hand|
+        if blackjack?(player, hand)
+          puts "#{player} has blackjack!"
+          return blackjack?(player, hand)
+        end
       end
     end
     false
@@ -379,84 +375,96 @@ class Game
   end
 
   def lost?(player, hand)
-    blackjack_getter = @players.select {|player| player if blackjack?(player, hand)}
-    (bust?(player, hand) || (blackjack_getter.length > 0 && !blackjack_getter.include?(player)) || ((@house.hand_value(@house.cards) > player.hand_value(hand)) && !bust?(@house, @house.cards))) ? true : false
+    blackjack_hands = []
+    @players.each {|playr| playr.hands.each {|cards| blackjack_hands << {player: playr, hand: cards} if blackjack?(playr, cards)}}
+    (bust?(player, hand) || (blackjack_hands.length > 0 && !blackjack_hands.include?({player: player, hand: hand})) || ((@house.hand_value(@house.cards) > player.hand_value(hand)) && !bust?(@house, @house.cards))) ? true : false
   end
 
-  def surrender?(player)
-    player.is_playing == false
+  def surrender?(player, hand_index)
+    player.is_playing[hand_index] == false
   end
 
   def draw?(player, hand)
     !bust?(player, hand) && player.hand_value(hand) == @house.hand_value(@house.cards)
   end
 
-  def distribute_winnings(hand, hand_index)
+  def distribute
     @betters.each do |player|
-      reveal_cards(player)
-    end
-    @betters.each do |player|
-      winnings = 0
-      losings = 0
-
-      if blackjack?(@house, @house.cards) && blackjack?(player, hand) #double blackjack #####draw + insurance winnings - no change to bets
-        winnings = (player.side_bet*2) + player.bet[hand_index]#don't double bet - it's a draw
-
-      elsif blackjack?(@house) #house blackjack ########bet value is zero, side_bet stays the same
-        winnings = (player.side_bet*2)
-        losings = player.bet[hand_index]
-
-      elsif blackjack?(player)
-        winnings = (player.bet[hand_index]*1.5)
-        losings = player.side_bet
-
-      elsif draw?(player)
-        winnings = player.bet[hand_index] #return bet
-        losings = player.side_bet
-
-      elsif bust?(player, hand) #player lose
-        losings = player.side_bet + player.bet[hand_index]
-
-      elsif surrender?(player)
-        winnings = (player.bet[hand_index]/2)
-        losings = (player.bet[hand_index]/2)
-        player.is_playing = true
-
-      elsif lost?(player)
-        losings = player.side_bet + player.bet[hand_index]
-
-      elsif won?(player, hand) #player win
-        winnings = (player.bet[hand_index] * 2)
-        losings = player.side_bet
-      end
-
-      player.chips = player.chips + winnings
-
-      puts ''
-      puts "#{player} won #{winnings} chips."
-      puts "#{player} lost #{losings} chips."
-      puts "#{player} has #{player.chips} chips."
-
-      if player == @player_1
-        player.net_winnings = player.net_winnings + winnings - losings
-        puts "Net winnings is #{player.net_winnings} chips."
-        if player.net_winnings > 1000000
-          @house.angry = true
-        end
+      player.hands.each_with_index do |hand, index|
+        reveal_cards(player, hand)
+        distribute_winnings(player, hand, index)
       end
       reset(player)
-
     end
+
     if @house.angry
       puts 'The House says:'
       puts 'Get out! And take your winnings with you!'
       exit
     end
-    @house.hands.each {|hand| hand = []}
+    @house.hands.each {|hand| hand.clear}
+
+
+  end
+
+  def distribute_winnings(player, hand, hand_index)
+
+    winnings = 0
+    losings = 0
+
+    if blackjack?(@house, @house.cards) && blackjack?(player, hand) #double blackjack #####draw + insurance winnings - no change to bets
+      winnings = (player.side_bet*2) + player.bet[hand_index]#don't double bet - it's a draw
+
+    elsif blackjack?(@house, @house.cards) #house blackjack ########bet value is zero, side_bet stays the same
+      winnings = (player.side_bet*2)
+      losings = player.bet[hand_index]
+
+    elsif blackjack?(player, hand)
+      winnings = (player.bet[hand_index]*1.5)
+      losings = player.side_bet
+
+    elsif draw?(player, hand)
+      winnings = player.bet[hand_index] #return bet
+      losings = player.side_bet
+
+    elsif bust?(player, hand) #player lose
+      losings = player.side_bet + player.bet[hand_index]
+
+    elsif surrender?(player, hand_index)
+      winnings = (player.bet[hand_index]/2.0)
+      losings = (player.bet[hand_index]/2.0)
+      player.is_playing[hand_index] = true
+
+    elsif lost?(player, hand)
+      losings = player.side_bet + player.bet[hand_index]
+
+    elsif won?(player, hand) #player win
+      winnings = (player.bet[hand_index] * 2)
+      losings = player.side_bet
+    end
+
+    player.side_bet = 0 #reset here so split hand doesn't process side bet again
+
+    player.chips = player.chips + winnings
+
+    puts ''
+    puts "#{player} won #{winnings} chips."
+    puts "#{player} lost #{losings} chips."
+    puts "#{player} has #{player.chips} chips."
+
+    if player == @player_1
+      player.net_winnings = player.chips - 500
+      puts "Net winnings is #{player.net_winnings} chips."
+      if player.net_winnings > 1000000
+        @house.angry = true
+      end
+    end
+
   end
 
   def reset(player)
-    player.bet = 0
+    player.bet.clear
+    player.bet=(0)
     player.side_bet = 0
 
     player.hands = []

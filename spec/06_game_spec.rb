@@ -73,11 +73,16 @@ describe "Game" do
 
   describe '#double' do
     it "doubles the player's bet" do
-      game.player_1.bet = 50
-      new_bet = game.player_1.bet * 2
-      puts new_bet
-      game.double(game.player_1, game.player_1.cards, new_bet)
-      expect(game.player_1.bet).to eq(100)
+      game.player_1.hands = []
+      game.player_1.cards = [{card: "H3", value: 3, running_count: 1}, {card: "D6", value: 6, running_count: 1}]
+      game.player_1.hands << game.player_1.cards
+
+      game.player_1.bet = [50]
+      new_bet = (game.player_1.bet[0][0] * 2)
+
+      #puts new_bet
+      game.double(game.player_1, game.player_1.cards, 0, new_bet)
+      expect(game.player_1.bet[0]).to eq(100)
     end
   end
 
@@ -117,7 +122,7 @@ describe "Game" do
 
       game.player_1.cards = [{card: "H7", value: 7, running_count: 0}, {card: "S10", value: 10, running_count: -1}, {card: "D7", value: 7, running_count: 0}]
       game.house.cards = [{card: "S8", value: 7, running_count: 0}, {card: "D10", value: 10, running_count: -1}, {card: "D7", value: 7, running_count: 0}]
-      expect(game.won?(game.player_1), game.player_1.cards).to eq(false)
+      expect(game.won?(game.player_1, game.player_1.cards)).to eq(false)
     end
   end
 
@@ -127,19 +132,19 @@ describe "Game" do
       expect(game.blackjack?(game.player_1, game.player_1.cards)).to eq(false)
 
       game.player_1.cards = [{card: "S10", value: 10, running_count: -1}, {card: "DA", value: 11, running_count: -1}]
-      expect(game.blackjack?(game.player_1)).to eq(true)
+      expect(game.blackjack?(game.player_1, game.player_1.cards)).to eq(true)
 
       game.player_1.cards = [{card: "H7", value: 7, running_count: 0}, {card: "S10", value: 10, running_count: -1}]
-      expect(game.blackjack?(game.player_1)).to eq(false)
+      expect(game.blackjack?(game.player_1, game.player_1.cards)).to eq(false)
 
       game.house.cards = [{card: "S7", value: 7, running_count: 0}, {card: "D10", value: 10, running_count: -1}, {card: "D4", value: 4, running_count: 1}]
-      expect(game.blackjack?(game.house)).to eq(false)
+      expect(game.blackjack?(game.house, game.house.cards)).to eq(false)
 
       game.house.cards = [{card: "S10", value: 10, running_count: -1}, {card: "DA", value: 11, running_count: -1}]
-      expect(game.blackjack?(game.house)).to eq(true)
+      expect(game.blackjack?(game.house, game.house.cards)).to eq(true)
 
       game.house.cards = [{card: "H7", value: 7, running_count: 0}, {card: "S10", value: 10, running_count: -1}]
-      expect(game.blackjack?(game.house)).to eq(false)
+      expect(game.blackjack?(game.house, game.house.cards)).to eq(false)
     end
   end
 
@@ -170,7 +175,7 @@ describe "Game" do
       game.house.cards = [{card: "HA", value: 11, running_count: -1}, {card: "S10", value: 10, running_count: -1}]
       game.player_1.cards = [{card: "H2", value: 2, running_count: 1}, {card: "S9", value: 9, running_count: 0}]
 
-      game.player_1.bet = [20]
+      game.player_1.send('bet=', 20, 0)
       game.player_1.side_bet = 5
       game.player_1.chips = 50
 
@@ -181,17 +186,17 @@ describe "Game" do
 
     it 'calculates winnings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
 
     end
     it 'calculates losings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
 
     end
     it 'calculates final chips' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/has #{(array[0] + array[2])} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/has #{(array[0] + array[2])} chips./).to_stdout
     end
   end
 
@@ -201,7 +206,7 @@ describe "Game" do
       game.player_1.cards = [{card: "SA", value: 11, running_count: -1}, {card: "SJ", value: 10, running_count: -1}]
 
 
-      game.player_1.bet = [20]
+      game.player_1.send('bet=', 20, 0)
       game.player_1.side_bet = 5
       game.player_1.chips = 50
 
@@ -211,17 +216,17 @@ describe "Game" do
     end
     it 'calculates winnings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
 
     end
     it 'calculates losings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
 
     end
     it 'calculates final chips' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
     end
 
   end
@@ -232,7 +237,7 @@ describe "Game" do
       game.player_1.cards = [{card: "SA", value: 11, running_count: -1}, {card: "SJ", value: 10, running_count: -1}]
 
 
-      game.player_1.bet = [20]
+      game.player_1.send('bet=', 20, 0)
       game.player_1.side_bet = 5
       game.player_1.chips = 50
 
@@ -242,73 +247,105 @@ describe "Game" do
     end
     it 'calculates winnings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
 
     end
     it 'calculates losings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
 
     end
     it 'calculates final chips' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
     end
 
   end
 
   describe '#distribute_winnings: only computer player has blackjack' do # TODO: how to test?
     def setup
+
+      game.player_1.hands = []
+      game.player_2.hands = []
+      game.house.hands = []
+
       game.player_2.cards = [{card: "HA", value: 11, running_count: -1}, {card: "S10", value: 10, running_count: -1}]
       game.player_1.cards = [{card: "D10", value: 10, running_count: -1}, {card: "SJ", value: 10, running_count: -1}]
+      split_cards = [{card: "H10", value: 10, running_count: -1}, {card: "C4", value: 4, running_count: 1}]
       game.house.cards = [{card: "D9", value: 9, running_count: 0}, {card: "S8", value: 8, running_count: 0}]
 
+      game.player_1.hands << game.player_1.cards
+      game.player_1.hands << split_cards
 
-      game.player_1.bet = [20]
+      game.player_2.hands << game.player_2.cards
+      game.house.hands << game.house.cards
+
+      game.player_1.send('bet=', 20, 0)
+      game.player_1.send('bet=', 20, 1)
       game.player_1.side_bet = 5
       game.player_1.chips = 50
 
       winnings1 = 0
       losings1 = game.player_1.side_bet + game.player_1.bet[0]
 
-      game.player_2.bet = [20]
+      winnings3 = 0
+      losings3 = game.player_1.bet[1]
+
+      game.player_1.send('bet=', 20, 0)
       game.player_2.side_bet = 5
       game.player_2.chips = 50
 
       winnings2 = game.player_2.bet[0]*1.5
       losings2 = game.player_2.side_bet
 
-      [winnings1, losings1, game.player_1.chips, winnings2, losings2, game.player_2.chips]
+      [winnings1, losings1, game.player_1.chips, winnings2, losings2, game.player_2.chips, winnings3, losings3, game.player_1.chips]
     end
 
     it 'calculates human player\'s winnings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
     end
 
     it 'calculates human player\'s losings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
     end
 
     it 'calculates human player\'s final chips' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
     end
 
     it 'calculates computer player\'s winnings' do
       array = setup
-      expect { game.distribute_winnings(game.player_2.cards, 0) }.to output(/won #{array[3]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_2, game.player_2.cards, 0) }.to output(/won #{array[3]} chips./).to_stdout
 
     end
     it 'calculates computer player\'s losings' do
       array = setup
-      expect { game.distribute_winnings(game.player_2.cards, 0) }.to output(/lost #{array[4]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_2, game.player_2.cards, 0) }.to output(/lost #{array[4]} chips./).to_stdout
 
     end
     it 'calculates computer player\'s final chips' do
       array = setup
-      expect { game.distribute_winnings(game.player_2.cards, 0) }.to output(/has #{array[3] + array[5]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_2, game.player_2.cards, 0) }.to output(/has #{array[3] + array[5]} chips./).to_stdout
+    end
+
+    it 'calculates human player\'s winnings when hand is split' do
+      array = setup
+
+      expect { game.distribute_winnings(game.player_1, game.player_1.hands[1], 1) }.to output(/won #{array[6]} chips./).to_stdout
+    end
+
+    it 'calculates human player\'s losings when hand is split' do
+      array = setup
+
+      expect { game.distribute }.to output(/lost #{array[7]} chips./).to_stdout
+    end
+
+    it 'calculates human player\'s final chips when hand is split' do
+      array = setup
+      expect { game.distribute_winnings(game.player_1, game.player_1.hands[1], 1) }.to output(/has #{array[0] + array[6] + array[8]} chips./).to_stdout
     end
 
   end
@@ -320,7 +357,7 @@ describe "Game" do
       game.house.cards = [{card: "H2", value: 2, running_count: 1}, {card: "D9", value: 9, running_count: 0}, {card: "S9", value: 9, running_count: 0}]
 
 
-      game.player_1.bet = [20]
+      game.player_1.send('bet=', 20, 0)
       game.player_1.side_bet = 0
       game.player_1.chips = 50
 
@@ -330,17 +367,17 @@ describe "Game" do
     end
     it 'calculates winnings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
 
     end
     it 'calculates losings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
 
     end
     it 'calculates final chips' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
     end
 
   end
@@ -354,7 +391,7 @@ describe "Game" do
       game.house.cards = [{card: "SA", value: 11, running_count: -1}, {card: "D5", value: 5, running_count: 1}, {card: "S2", value: 2, running_count: 1}]
 
 
-      game.player_1.bet = [20]
+      game.player_1.send('bet=', 20, 0)
       game.player_1.side_bet = 5
       game.player_1.chips = 50
 
@@ -364,17 +401,17 @@ describe "Game" do
     end
     it 'calculates winnings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
 
     end
     it 'calculates losings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
 
     end
     it 'calculates final chips' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
     end
 
   end
@@ -388,7 +425,7 @@ describe "Game" do
       game.player_1.cards = [{card: "SA", value: 11, running_count: -1}, {card: "D5", value: 5, running_count: 1}, {card: "S2", value: 2, running_count: 1}]
 
 
-      game.player_1.bet = [20]
+      game.player_1.send('bet=', 20, 0)
       game.player_1.side_bet = 5
       game.player_1.chips = 50
 
@@ -398,17 +435,17 @@ describe "Game" do
     end
     it 'calculates winnings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/won #{array[0]} chips./).to_stdout
 
     end
     it 'calculates losings' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/lost #{array[1]} chips./).to_stdout
 
     end
     it 'calculates final chips' do
       array = setup
-      expect { game.distribute_winnings(game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
+      expect { game.distribute_winnings(game.player_1, game.player_1.cards, 0) }.to output(/has #{array[0] + array[2]} chips./).to_stdout
     end
 
   end
@@ -457,12 +494,14 @@ describe "Game" do
 
   describe '#split' do
     it 'finds duplicate value if present' do
+
+
       game.player_1.hands = []
       game.player_1.cards = [{card: "CA", value: 11, running_count: -1}, {card: "SA", value: 11, running_count: -1}]
 
       game.player_1.hands << game.player_1.cards
 
-      game.split(game.player_1, game.player_1.cards)
+      game.split(game.player_1, game.player_1.cards, 0)
 
       expect(game.player_1.hands).to eq([[{card: "SA", value: 11, running_count: -1}], [{card: "CA", value: 11, running_count: -1}]])
     end
@@ -473,7 +512,7 @@ describe "Game" do
 
       game.player_1.hands << game.player_1.cards
 
-      game.split(game.player_1, game.player_1.cards)
+      game.split(game.player_1, game.player_1.cards, 0)
 
       expect(game.player_1.hands).to eq([[{card: "CA", value: 11, running_count: -1}, {card: "S10", value: 10, running_count: -1}]])
     end
@@ -484,21 +523,35 @@ describe "Game" do
 
       game.player_1.hands << game.player_1.cards
 
-      game.split(game.player_1, game.player_1.cards)
+      game.split(game.player_1, game.player_1.cards, 0)
 
       expect(game.player_1.hands.length).to eq(2)
     end
 
-    it 'can split if hand already has than 2 cards' do
+    it 'can split if hand already has more than 2 cards' do
       game.player_1.hands = []
       game.player_1.cards = [{card: "CA", value: 11, running_count: -1}, {card: "SA", value: 11, running_count: -1}, {card: "H2", value: 2, running_count: 1}]
 
       game.player_1.hands << game.player_1.cards
 
-      game.split(game.player_1, game.player_1.cards)
+      game.split(game.player_1, game.player_1.cards, 0)
 
       expect(game.player_1.hands.length).to eq(2)
       expect(game.player_1.hands).to eq([[{:card=>"SA", :value=>11, :running_count=>-1}, {:card=>"H2", :value=>2, :running_count=>1}], [{:card=>"CA", :value=>11, :running_count=>-1}]])
+    end
+
+    it 'can split if player already has multiple hands' do
+      game.player_1.hands = []
+      game.player_1.cards = [{card: "CA", value: 11, running_count: -1}, {card: "SA", value: 11, running_count: -1}, {card: "H2", value: 2, running_count: 1}]
+      second_hand = [{card: "S2", value: 2, running_count: 1}]
+      game.player_1.hands << game.player_1.cards
+      game.player_1.hands << second_hand
+
+      game.split(game.player_1, game.player_1.cards, 0)
+
+      expect(game.player_1.hands.length).to eq(3)
+
+      expect(game.player_1.hands).to eq([[{:card=>"SA", :value=>11, :running_count=>-1}, {:card=>"H2", :value=>2, :running_count=>1}], [{:card=>"S2", :value=>2, :running_count=>1}], [{:card=>"CA", :value=>11, :running_count=>-1}]])
     end
   end
 end

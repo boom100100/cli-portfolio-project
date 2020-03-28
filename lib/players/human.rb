@@ -11,9 +11,18 @@ module Players
     end
 
 
-    def move #bet <= chips ? bet = input : move
+    def move(hand = nil) #bet <= chips ? bet = input : move
       input = gets.chomp
       input
     end
+
+    def bet=(value, hand_index = 0)
+      if @bet[hand_index]
+         @bet[hand_index] = value
+       else
+         @bet << value
+       end
+    end
+
   end
 end
