@@ -27,6 +27,5 @@ module Players
     def side_bet=(value, hand_index = 0)
       @side_bet = value
     end
-
   end
 end
