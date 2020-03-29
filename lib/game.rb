@@ -115,7 +115,7 @@ class Game
     end
 
     if player.chips < minimum
-      puts 'Would you like to buy more chips? Enter \'y\' or \'n.\''
+      puts 'Would you like to buy more chips? Enter (y) or (n).'
       input = player.move
       if input == 'y' || input == 'Y'
         player.chips = 500.00
