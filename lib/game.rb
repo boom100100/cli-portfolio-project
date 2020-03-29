@@ -89,7 +89,8 @@ class Game
       break if i == 8
     end
     input = @player_1.move
-    if input.to_i > 8 || input.to_i <= 0
+    if !input.match(/[1-8]/)
+      puts ''
       choose_table
     end
 
@@ -98,7 +99,7 @@ class Game
     puts ''
     @table = input.to_i
     @deck.make_decks(input.to_i)
-    input #doesn't need this return value
+
   end
 
   def bet(player, limit, type, hand_index = 0)
@@ -145,7 +146,19 @@ class Game
         end
 
     else
-      if limit > 0
+      if player.chips < 5
+        puts 'The computer needs more chips.'
+        player.chips = 500.00
+        puts "The computer now has #{player.chips} chips."
+
+        if type == 'bet'
+          limit = player.chips
+        else
+          limit = player.chips/2
+        end
+      end
+      if limit > 1
+
         comp_bet = Random.new.rand(1..limit)
         player.send("#{type}=",comp_bet, hand_index)
         #player.bet[hand_index] = Random.new.rand(1..limit)
@@ -298,7 +311,7 @@ class Game
       player.hands << new_hand
       reveal_cards(player, new_hand)
 
-      player.send('bet=',player.bet[hand_index], hand_index)
+      player.send('bet=',player.bet[hand_index], player.bet.length)
       player.chips = player.chips - player.bet[hand_index] #new bet must be removed from player's chips
       player.is_playing << true
 
@@ -394,6 +407,7 @@ class Game
     @betters.each do |player|
       player.hands.each_with_index do |hand, index|
         reveal_cards(player, hand)
+        puts "Hand index is #{index}"
         distribute_winnings(player, hand, index)
       end
       reset(player)
@@ -488,12 +502,12 @@ class Game
     elsif input == 't' || input == 'T'
       change_table
     elsif input == 'q' || input == 'Q'
-      puts 'Are you sure you want to quit? All your winnings and losses will reset. Enter "y" for yes and "n" for no.'
+      puts 'Are you sure you want to quit? All your winnings and losses will reset. Enter (y) for yes and (n) for no.'
       input = gets.chomp
       if input == 'n' || input == 'N'
         contemplate
       elsif input == 'y' || input == 'Y'
-        exit
+        puts ''
       else
         puts 'Your input is invalid. Please try again.'
         cont('f')
