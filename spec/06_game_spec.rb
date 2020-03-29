@@ -262,7 +262,7 @@ describe "Game" do
 
   end
 
-  describe '#distribute_winnings: only computer player has blackjack' do # TODO: how to test?
+  describe '#distribute_winnings: only computer player has blackjack' do
     def setup
 
       game.player_1.hands = []
