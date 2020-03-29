@@ -89,7 +89,7 @@ class Game
       break if i == 8
     end
     input = @player_1.move
-    if !input.match(/[1-8]/)
+    if !input.match(/\A[1-8]\z/)
       puts ''
       choose_table
     end

@@ -48,6 +48,7 @@ class CommandLineInterface
         puts ''
       end
     when 'exit'
+      Music.stop
     else
       puts ''
       puts 'Input is invalid. Please try again.'
