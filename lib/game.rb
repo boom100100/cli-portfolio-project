@@ -12,6 +12,8 @@ class Game
 
     @betters = [@player_1, @player_2, @player_3]
     @players = [*@betters, @house]
+
+    @running_count = 0
   end
 
   def self.tutorial
@@ -60,7 +62,10 @@ class Game
   end
 
   def change_table
-    choose_table
+    input = ''
+    while !input.match(/\A[1-8]\z/)
+      input = choose_table(input)
+    end
     do_round
   end
 
@@ -71,15 +76,16 @@ class Game
     if over?
       distribute
       contemplate
+    else
+      play
+      contemplate
     end
-    play
-    contemplate
 
 
   end
 
-  def choose_table
-    input = nil
+  def choose_table(input)
+
 
     puts 'Please choose a table.'
     i = 0
@@ -91,15 +97,15 @@ class Game
     input = @player_1.move
     if !input.match(/\A[1-8]\z/)
       puts ''
-      choose_table
+    else
+
+      puts ''
+      puts "You have chosen Table #{input}"
+      puts ''
+      @table = input.to_i
+      @deck.make_decks(input.to_i)
     end
-
-    puts ''
-    puts "You have chosen Table #{input}"
-    puts ''
-    @table = input.to_i
-    @deck.make_decks(input.to_i)
-
+    input
   end
 
   def bet(player, limit, type, hand_index = 0)
@@ -132,7 +138,7 @@ class Game
           #player.bet[hand_index] = wager.to_i
           player.chips = player.chips - player.bet[hand_index]
           puts ''
-          puts "Your bet is #{player.bet[hand_index]} chips."
+          puts "Your bet is #{player.send(type)} chips."
         elsif wager.to_i && wager.to_i > limit #bets too much
           puts "That wager exceeds what you can bet."
           bet(player, limit, type, hand_index)
@@ -277,7 +283,9 @@ class Game
   end
 
   def hit(hand) #gives card to player, removes card from @cards
-    hand << @deck.cards.shift
+    card = @deck.cards.shift
+    @running_count = @running_count + card[:running_count]
+    hand << card
   end
 
   def double(player, hand, hand_index, new_bet) #test result is wrong
@@ -529,6 +537,7 @@ class Game
       puts '**********************************'
       puts '**********************************'
       puts ''
+      @running_count = 0
       @deck.cards = []
       @deck.make_decks(@table)
 
@@ -537,7 +546,18 @@ class Game
 
           remove_extras = hand.each do |card|
             i = @deck.cards.index(card)
-            @deck.cards.delete_at(i) if i
+
+            if i
+              puts ''
+              puts ''
+              puts ''
+              puts 'Running count will be off.'
+              puts ''
+              puts ''
+              puts ''
+              @running_count = @running_count + @deck.cards[i][:running_count]
+              @deck.cards.delete_at(i)
+            end
           end
           remove_extras if hand
         end
