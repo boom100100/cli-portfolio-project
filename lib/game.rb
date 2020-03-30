@@ -80,8 +80,6 @@ class Game
       play
       contemplate
     end
-
-
   end
 
   def choose_table(input)
@@ -135,7 +133,7 @@ class Game
 
         if wager.to_i && wager.to_i <= limit && wager.to_i >= minimum #bets just enough
           player.send("#{type}=",wager.to_i, hand_index)
-          #player.bet[hand_index] = wager.to_i
+
           player.chips = player.chips - player.bet[hand_index]
           puts ''
           puts "Your bet is #{player.send(type)} chips."
@@ -167,7 +165,6 @@ class Game
 
         comp_bet = Random.new.rand(1..limit)
         player.send("#{type}=",comp_bet, hand_index)
-        #player.bet[hand_index] = Random.new.rand(1..limit)
         player.chips = player.chips - player.bet[hand_index]
 
         puts "The computer bets #{player.bet[hand_index]}."
@@ -277,7 +274,7 @@ class Game
         end
       else
         puts 'That is an invalid move.'
-        #do_turn(player, hand, hand_index)
+
       end
     end
   end
@@ -420,7 +417,9 @@ class Game
       end
       reset(player)
     end
-
+    puts ''
+    puts "The running count is #{@running_count}."
+    puts ''
     if @house.angry
       puts 'The House says:'
       puts 'Get out! And take your winnings with you!'
