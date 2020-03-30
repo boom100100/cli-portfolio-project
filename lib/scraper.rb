@@ -6,11 +6,11 @@ require "fileutils"
 
 class Scraper
 
-  def self.scrape_pages#(index_url) #https://www.freesfx.co.uk/sfx/casino
-    puts 'Scraping.'
+  def self.scrape_pages
+    #puts 'Scraping.'
     Scraper.scrape(Scraper.get_background_noise)
     Scraper.scrape(Scraper.get_playlist)
-    puts 'Scraping complete.'
+    #puts 'Scraping complete.'
   end
 
 private
