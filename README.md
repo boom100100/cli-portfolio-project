@@ -10,7 +10,25 @@ Type in the following in a console to start the app:
 
 ruby bin/run
 
+
 Dependencies:
 
 mpg123
 Instructions to install mpg123 are available at https://www.npmjs.com/package/mpg123.
+
+
+Contributing:
+
+Fork, then clone the repo:
+
+git clone git@github.com:your-username/cli-portfolio-project.git
+
+Install the bundle:
+bundle install
+
+Try the tests:
+rspec
+
+Make changes, and then make sure tests pass again.
+
+Finally, push to your fork and submit a pull request. I'll check it out as soon as I can.
