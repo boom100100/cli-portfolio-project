@@ -22,9 +22,9 @@ class Game
     puts ''
     puts 'Gameplay works as follows.'
     puts 'Place an initial bet.'
-    #puts 'Choose whether to increase that bet.'
     puts 'The dealer deals cards after the first bet.'
-    puts 'If no player immediately gets a blackjack, you can choose to draw another card into your hand or to decline.'
+    puts 'If no player immediately gets a blackjack, you can choose to draw another card into your hand, or hit.'
+    puts 'Alternatively, the player can stand, or decline to accept more cards.'
     puts 'Stop when you have the highest possible value without not going over, or "busting."'
     puts ''
     puts 'Cards 2-10 are worth their numerical value, regardless of suit.'
@@ -32,6 +32,17 @@ class Game
     puts 'An A (or ace) is worth 11 or 1 point, depending on your need.'
     puts 'For example, having an A and a J means you have a blackjack hand. Your score is 21, and if you are the only one with two cards like these, you automatically win. If the dealer also has this hand, it is a tie between you two.'
     puts 'Alternatively, an A, a 10, a 7, and a 3 also add to 21.'
+    puts ''
+    puts 'Special Rules:'
+    puts ''
+    puts 'If a player only wants one more hit, and if a player has high confidence in their ability to win, they can double.'
+    puts 'Doubling means the bet for the current hand the player is playing is doubled.'
+    puts 'The current hand receives one last hit, and then the hand stands automatically.'
+    puts 'If a player has cards with a matching face value, they can split. This excludes 10-cards that aren\'t perfect pairs (e.g. a K and a 10).'
+    puts 'A split creates two hands and two chances to beat the dealer.'
+    puts 'A surrender involves giving up when the player\'s chances of winning are too small.'
+    puts 'Surrendering forfeits half of the bet and recovers the other half back into the player\'s pool of chips.'
+    puts ''
     puts 'Now, let\'s jump in!'
     puts ''
     puts ''
@@ -285,7 +296,7 @@ class Game
     hand << card
   end
 
-  def double(player, hand, hand_index, new_bet) #test result is wrong
+  def double(player, hand, hand_index, new_bet)
 
     player.send('bet=',new_bet, hand_index)
     hit(hand)
@@ -293,8 +304,8 @@ class Game
   end
 
   def split(player, hand, hand_index)
-    #check cards for duplicate value (card[:value] matches other && card[:card][0..-1] matches other)
-    #i = 0
+    #check cards for duplicate value
+
     duplicate = nil
     hand.each do |card|
       hand.each do |comp_card|
@@ -370,11 +381,8 @@ class Game
     end
   end
 
-  def quit? #when you walk away or when chips = 0 or when you get kicked out because house is angry100
-  end
-
   def over?
-    #blackjack = over
+    #after insurance, if someone has blackjack, this hand is over
     @players.each do |player|
       player.hands.each do |hand|
         if blackjack?(player, hand)
@@ -450,7 +458,7 @@ class Game
       winnings = player.bet[hand_index] #return bet
       losings = player.side_bet
 
-    elsif bust?(player, hand) #player lose
+    elsif bust?(player, hand) #player loses
       losings = player.side_bet + player.bet[hand_index]
 
     elsif surrender?(player, hand_index)
@@ -461,7 +469,7 @@ class Game
     elsif lost?(player, hand)
       losings = player.side_bet + player.bet[hand_index]
 
-    elsif won?(player, hand) #player win
+    elsif won?(player, hand) #player wins
       winnings = (player.bet[hand_index] * 2)
       losings = player.side_bet
     end
