@@ -18,24 +18,24 @@ describe "Game" do
   describe '#choose_table' do
     it 'makes stack of 1 deck when table 1 chosen' do
       allow_any_instance_of(Kernel).to receive(:gets).and_return('1')
-      expect(game.choose_table).to eq('1')
+      expect(game.choose_table(@table)).to eq('1')
       expect(game.deck.cards.length).to eq(52)
     end
     it 'makes stack of 3 decks when table 3 chosen' do
       allow_any_instance_of(Kernel).to receive(:gets).and_return('3')
-      expect(game.choose_table).to eq('3')
+      expect(game.choose_table(@table)).to eq('3')
       expect(game.deck.cards.length).to eq(52*3)
     end
     it 'makes stack of 8 decks when table 8 chosen' do
       allow_any_instance_of(Kernel).to receive(:gets).and_return('8')
-      expect(game.choose_table).to eq('8')
+      expect(game.choose_table(@table)).to eq('8')
       expect(game.deck.cards.length).to eq(52*8)
       expect(game.deck.cards.select{|card| card[:card] == 'S2'}.length).to eq(8)
     end
     it 'allows duplicate cards when there are multiple decks' do
-      decks = Random.new.rand(7)+1 #+1 to prevent return of 0
+      decks = Random.new.rand(1..8)
       allow_any_instance_of(Kernel).to receive(:gets).and_return(decks.to_s)
-      expect(game.choose_table).to eq(decks.to_s)
+      expect(game.choose_table(@table)).to eq(decks.to_s)
       expect(game.deck.cards.select{|card| card[:card] == 'S2'}.length).to eq(decks)
     end
   end
@@ -79,8 +79,8 @@ describe "Game" do
 
       game.player_1.bet = [50]
       new_bet = (game.player_1.bet[0][0] * 2)
+      game.deck.make_decks(1)
 
-      #puts new_bet
       game.double(game.player_1, game.player_1.cards, 0, new_bet)
       expect(game.player_1.bet[0]).to eq(100)
     end
@@ -527,6 +527,7 @@ describe "Game" do
       game.player_1.cards = [{card: "CA", value: 11, running_count: -1}, {card: "SA", value: 11, running_count: -1}]
 
       game.player_1.hands << game.player_1.cards
+      game.deck.make_decks(1)
 
       game.split(game.player_1, game.player_1.cards, 0)
 
